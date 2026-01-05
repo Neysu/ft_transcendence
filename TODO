@@ -1,0 +1,37 @@
+Pierre Feuille ciseaux
+
+Regles du jeu :
+	- 3 manches en tout
+	- en cas d'ex aequo la manche n'est pas prise en compte et est relancée. ( si on est a la manche deux et que Jean et Pierre font tout les deux ciseaux on reste a la manche deux jusqu'as ce qu'une manche soit remportée )
+	- celui avec le plus de victoire a la fin gagne ( par exemple si Jean a 2 points et Pierre 1 point, Jean gagne)
+	- la partie s'arrete a la fin des trois manche ( de maniere a ce qu'il y ait forcement un gagnant a chaque partie)
+	- Evidement les regles de pierres feuilles ciseaux sont respecter, qui gagne contre qui comment etc -> https://fr.wikipedia.org/wiki/Pierre-feuille-ciseaux
+
+Objectifs du site :
+	- Creations d'utilisateur : pseudo, email (pas sur d'en avoir besoin) , mdp (photo de profile optionel)
+	- Creations d'un salon : 
+		- compte obligatoire 
+		- mdp/nom pour le salon
+		- min 2 joueur pour lancer une partie (pas encore sur pour le max)
+	- multijoueur (en ce qui concerne le multijoueur a + de 2 joueur je ne suis pas encore sur sur comment l'implementer)
+
+IA :
+	- "semblant d'humaniter", choix relativement previsible en fonction des choix precedant
+	- preferance pour certains signes
+	- example d'implementation que j'ai en tete en javascript ->
+
+		// l'implementation est vraiment simple mais efficace en mon sens des améliorations sont bienvenue evidements
+		function generateRuleString() {
+  			// generate two increasing numbers
+  			const first = Math.floor(Math.random() * 9) + 1; // 1–9
+ 			const second = Math.floor(Math.random() * (10 - first)) + first + 1; // (first+1)–10
+
+			if (i <= ${first})
+  				return "pierre";
+			if (i <= ${second})
+  			return "feuille";
+			if (i <= 10)
+  				return "ciseaux";
+		}
+
+		
