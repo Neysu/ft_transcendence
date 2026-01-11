@@ -9,9 +9,10 @@ First, install NVM if you don’t have it yet:
 curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.1/install.sh | bash
 nvm install 22
 nvm use 22
-bunx prisma migrate dev  # This creates the database and generates the necessary migration files and Prisma client
-bunx tsx src/test.ts  # This runs a small test that creates a default user and a post to verify the database setup
-bunx prisma studio  # Opens Prisma Studio to view and edit the database
+bun install # This inatll all dependencies
+bun prisma migrate dev  # This creates the database and generates the necessary migration files and Prisma client
+bun run src/test.ts  # This runs a small test that creates a default user and a post to verify the database setup
+bun prisma studio  # Opens Prisma Studio to view and edit the database
 ```
 
 ```bash
