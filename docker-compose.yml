@@ -1,0 +1,38 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/compose-spec/compose-go/master/schema/compose-spec.json
+
+services:
+  front:
+    image: trans_front
+    build:
+      context: .
+      dockerfile: ./front.Dockerfile
+    hostname: ${FRONT_HOST}
+    environment:
+      - FRONT_HOST
+      - FRONT_HTTP_PORT
+      - FRONT_HTTPS_PORT
+      - BACK_HOST
+      - BACK_HTTP_PORT
+    networks:
+      - back
+  back:
+    image: trans_back
+    build:
+      context: .
+      dockerfile: ./back.Dockerfile
+    hostname: ${BACK_HOST}
+    environment:
+      - BACK_HOST
+      - BACK_HTTP_PORT
+    develop:
+      watch:
+        - path: ./front.Dockerfile
+          action: rebuild
+
+
+networks:
+  back:
+
+volumes:
+  certs:
+  
