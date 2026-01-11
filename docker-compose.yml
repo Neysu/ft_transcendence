@@ -17,6 +17,8 @@ services:
       - back
   back:
     image: trans_back
+    #ports:
+    #  - "3000:3000"
     build:
       context: .
       dockerfile: ./back.Dockerfile
@@ -28,11 +30,21 @@ services:
       watch:
         - path: ./front.Dockerfile
           action: rebuild
+  nginx:
+    image: nginx
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    command: [nginx, '-g', 'daemon off;']
+    networks:
+      - back
+    ports:
+      - ${HTTPS_NGINX}:${HTTPS_NGINX}
 
 
 networks:
   back:
+    name: backend
 
 volumes:
-  certs:
-  
+  sqlite-db:
+    driver: local
