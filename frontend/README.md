@@ -4,6 +4,8 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 
 First, run the development server:
 
+to RUN dev
+
 ```bash
 npm run dev
 # or
@@ -13,6 +15,15 @@ pnpm dev
 # or
 bun dev
 ```
+
+to RUN and build 
+
+```bash
+bun next build start
+
+bun start
+```
+
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 

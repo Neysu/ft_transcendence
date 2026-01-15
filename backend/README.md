@@ -16,7 +16,7 @@ bun prisma studio  # Opens Prisma Studio to view and edit the database
 ```
 
 ```bash
-bun run src/server.js
+bun run src/server.ts
 
 ```
 
