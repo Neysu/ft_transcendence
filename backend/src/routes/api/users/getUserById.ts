@@ -1,16 +1,18 @@
 import type { FastifyInstance } from "fastify";
-import { prisma } from "../../../lib/prisma";
+import { findUserByIdOrUsername } from "../../../lib/api/userUtils";
+import { getUserByIdSchema } from "../../../swagger/schemas";
 
 export async function getUserById(fastify: FastifyInstance) {
   fastify.register(async function (fastify) {
 
-  // GET /api/user/:id → récupérer un utilisateur par son ID
-  fastify.get("/:id", async (request, reply) => {
+  // GET /api/user/:id → récupérer un utilisateur par son id
+  fastify.get("/:id", { schema: getUserByIdSchema }, async (request, reply) => {
       try {
         const { id } = request.params as { id: string };
-        const user = await prisma.user.findUnique({
-          where: { id: Number(id) },
-          select: { id: true, username: true, email: true },
+        const user = await findUserByIdOrUsername(id, {
+          id: true,
+          username: true,
+          email: true,
         });
         if (!user) {
           reply.code(404);

@@ -1,11 +1,12 @@
 import type { FastifyInstance } from "fastify";
 import { prisma } from "../../../lib/prisma";
+import { getUsersSchema } from "../../../swagger/schemas";
 
 export async function getUsers(fastify: FastifyInstance) {
   fastify.register(async function (fastify) {
 
-    // GET /api/user/users → récupérer tous les utilisateurs
-    fastify.get("/", async (request, reply) => {
+    // GET /api/user → récupérer tous les utilisateurs
+    fastify.get("/", { schema: getUsersSchema }, async (request, reply) => {
       try {
         const users = await prisma.user.findMany({
           select: { id: true, username: true, email: true },

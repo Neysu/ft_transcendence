@@ -1,8 +1,9 @@
 import type { FastifyInstance } from "fastify";
 import { prisma } from "../../lib/prisma";
+import { healthSchema } from "../../swagger/schemas";
 
 export async function Health(fastify: FastifyInstance) {
-  fastify.get("/api/health", async (request, reply) => {
+  fastify.get("/health", { schema: healthSchema }, async (request, reply) => {
     try {
       await prisma.$queryRaw`SELECT 1`;
       return { status: "ok", db: "connected" };
