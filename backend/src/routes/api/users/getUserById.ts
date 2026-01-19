@@ -1,5 +1,7 @@
 import type { FastifyInstance } from "fastify";
 import { findUserByIdOrUsername } from "../../../lib/api/userUtils";
+import { UserIdParamSchema } from "../../../lib/api/schemasZod";
+import { parseOrReply } from "../../../lib/api/validation";
 import { getUserByIdSchema } from "../../../swagger/schemas";
 
 export async function getUserById(fastify: FastifyInstance) {
@@ -8,8 +10,11 @@ export async function getUserById(fastify: FastifyInstance) {
   // GET /api/user/:id → récupérer un utilisateur par son id
   fastify.get("/:id", { schema: getUserByIdSchema }, async (request, reply) => {
       try {
-        const { id } = request.params as { id: string };
-        const user = await findUserByIdOrUsername(id, {
+        const params = parseOrReply(UserIdParamSchema, request.params, reply);
+        if (!params) {
+          return;
+        }
+        const user = await findUserByIdOrUsername(params.id, {
           id: true,
           username: true,
           email: true,

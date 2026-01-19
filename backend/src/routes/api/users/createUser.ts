@@ -1,6 +1,7 @@
 import type { FastifyInstance } from 'fastify';
-import { ZodError } from 'zod';
 import { registerUser } from '../../../lib/api/register';
+import { RegisterSchema } from "../../../lib/api/schemasZod";
+import { parseOrReply } from "../../../lib/api/validation";
 import { userExistsByEmailOrUsername } from '../../../lib/api/userUtils';
 import { createUserSchema } from '../../../swagger/schemas';
 
@@ -10,15 +11,9 @@ export async function createUser(fastify: FastifyInstance) {
     // POST /api/user → créer un utilisateur
     fastify.post("/", { schema: createUserSchema }, async (request, reply) => {
       try {
-        const body = request.body as {
-          email?: string;
-          username?: string;
-          password?: string;
-        };
-
-        if (!body?.email || !body?.username || !body?.password) {
-          reply.code(400);
-          return { status: "error", message: "Missing required fields" };
+        const body = parseOrReply(RegisterSchema, request.body, reply);
+        if (!body) {
+          return;
         }
 
         const { email, username } = body;
@@ -28,14 +23,7 @@ export async function createUser(fastify: FastifyInstance) {
           return { status: "error", message: "User already exists" };
         }
 
-        const payload = {  email: body.email, username: body.username, password: body.password,
-        };
-        const user = await registerUser(fastify, payload);
-
-        if (!user.profileImage) {
-          reply.code(500);
-          return { status: "error", message: "Failed to create default avatar" };
-        }
+        const user = await registerUser(fastify, body);
 
         return reply.code(201).send({
           id: user.id,
@@ -44,11 +32,6 @@ export async function createUser(fastify: FastifyInstance) {
         });
 
       } catch (error) {
-        if (error instanceof ZodError) {
-          reply.code(400);
-          return { status: "error", message: "Invalid payload", issues: error.issues };
-        }
-
         if (error && typeof error === "object" && "code" in error) {
           const prismaError = error as { code?: string };
           if (prismaError.code === "P2002") {

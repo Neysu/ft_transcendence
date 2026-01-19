@@ -1,6 +1,8 @@
 import type { FastifyInstance } from 'fastify';
 import { prisma } from '../../../lib/prisma';
 import { findUserByIdOrUsername } from "../../../lib/api/userUtils";
+import { UpdateUserSchema, UserIdParamSchema } from "../../../lib/api/schemasZod";
+import { parseOrReply } from "../../../lib/api/validation";
 import { updateUserSchema } from "../../../swagger/schemas";
 import { authMiddleware } from "../../../middleware/auth";
 
@@ -12,8 +14,16 @@ export async function updateUser(fastify: FastifyInstance) {
       { schema: updateUserSchema, preHandler: (req, rep) => authMiddleware(fastify, req, rep) },
       async (request, reply) => {
         try {
-        const { id } = request.params as { id: string };
-        const user = await findUserByIdOrUsername(id, { id: true });
+        const params = parseOrReply(UserIdParamSchema, request.params, reply);
+        if (!params) {
+          return;
+        }
+        const body = parseOrReply(UpdateUserSchema, request.body, reply);
+        if (!body) {
+          return;
+        }
+
+        const user = await findUserByIdOrUsername(params.id, { id: true });
         if (!user) {
           reply.code(404);
           return { status: "error", message: "User not found" };
@@ -25,15 +35,9 @@ export async function updateUser(fastify: FastifyInstance) {
           return { status: "error", message: "Forbidden" };
         }
 
-        const { username, email } = request.body as { username?: string; email?: string };
-        if (username && /^[0-9]+$/.test(username)) {
-          reply.code(400);
-          return { status: "error", message: "Username cannot be only digits" };
-        }
-
         const updatedUser = await prisma.user.update({
           where: { id: user.id },
-            data: { username, email },
+            data: { username: body.username, email: body.email },
             select: { id: true, username: true, email: true },
           });
 

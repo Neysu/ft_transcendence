@@ -1,5 +1,7 @@
 import type { FastifyInstance } from "fastify";
 import { findUserByIdOrUsername } from "../../../../lib/api/userUtils";
+import { UserIdParamSchema } from "../../../../lib/api/schemasZod";
+import { parseOrReply } from "../../../../lib/api/validation";
 import { getProfilePictureSchema } from "../../../../swagger/schemas";
 
 export async function getProfilePicture(fastify: FastifyInstance) {
@@ -8,10 +10,11 @@ export async function getProfilePicture(fastify: FastifyInstance) {
     // GET /api/user/avatar/:id → récupérer l'avatar d'un utilisateur avec son id ou son username
     fastify.get("/avatar/:id", { schema: getProfilePictureSchema }, async (request, reply) => {
       try {	
-        const { id } = request.params as { id: string };
-        const user = await findUserByIdOrUsername(id, {
-          id: true,
-          username: true,
+        const params = parseOrReply(UserIdParamSchema, request.params, reply);
+        if (!params) {
+          return;
+        }
+        const user = await findUserByIdOrUsername(params.id, {
           profileImage: true,
         });
 
@@ -25,7 +28,7 @@ export async function getProfilePicture(fastify: FastifyInstance) {
           return { status: "error", message: "Profile image not found" };
         }
 
-        return { id: user.id, username: user.username, profileImage: user.profileImage };
+        return { profileImage: user.profileImage };
       } catch (error) {
         fastify.log.error({ err: error }, "Failed to fetch profile picture:");
         reply.code(500);

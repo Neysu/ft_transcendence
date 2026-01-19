@@ -1,6 +1,8 @@
 import type { FastifyInstance } from "fastify";
 import { prisma } from "../../../lib/prisma";
 import { findUserByIdOrUsername } from "../../../lib/api/userUtils";
+import { UserIdParamSchema } from "../../../lib/api/schemasZod";
+import { parseOrReply } from "../../../lib/api/validation";
 import { deleteUserSchema } from "../../../swagger/schemas";
 import { authMiddleware } from "../../../middleware/auth";
 
@@ -12,8 +14,11 @@ export async function deleteUser(fastify: FastifyInstance) {
       { schema: deleteUserSchema, preHandler: (req, rep) => authMiddleware(fastify, req, rep) },
       async (request, reply) => {
       try {
-        const { id } = request.params as { id: string };
-        const user = await findUserByIdOrUsername(id, {
+        const params = parseOrReply(UserIdParamSchema, request.params, reply);
+        if (!params) {
+          return;
+        }
+        const user = await findUserByIdOrUsername(params.id, {
           id: true,
           username: true,
           email: true,

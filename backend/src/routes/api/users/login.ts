@@ -1,6 +1,8 @@
 import type { FastifyInstance } from "fastify";
 import { prisma } from "../../../lib/prisma";
 import bcrypt from "bcrypt";
+import { LoginSchema } from "../../../lib/api/schemasZod";
+import { parseOrReply } from "../../../lib/api/validation";
 import { loginSchema } from "../../../swagger/schemas";
 
 export async function loginUser(fastify: FastifyInstance) {
@@ -8,24 +10,22 @@ export async function loginUser(fastify: FastifyInstance) {
     // POST /api/user/login → login utilisateur
     fastify.post("/login", { schema: loginSchema }, async (request, reply) => {
       try {
-        const { email, username, password } = request.body as {
-          email?: string;
-          username?: string;
-          password?: string;
-        };
-
-        if (!password || (!email && !username)) {
-          reply.code(400);
-          return { status: "error", message: "Missing credentials" };
+        const body = parseOrReply(LoginSchema, request.body, reply);
+        if (!body) {
+          return;
         }
-        if (email && username) {
-          reply.code(400);
-          return { status: "error", message: "Use either email or username" };
+        const { email, username, password } = body;
+        const orFilters = [];
+        if (email) {
+          orFilters.push({ email });
+        }
+        if (username) {
+          orFilters.push({ username });
         }
 
         const user = await prisma.user.findFirst({
           where: {
-            OR: [{ email }, { username }],
+            OR: orFilters,
           },
           select: {
             id: true,

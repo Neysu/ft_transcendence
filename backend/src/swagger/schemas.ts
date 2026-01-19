@@ -54,6 +54,13 @@ const avatarResponseSchema = {
   },
 };
 
+const avatarOnlySchema = {
+  type: "object",
+  properties: {
+    profileImage: { type: "string" },
+  },
+};
+
 const authRequired = [{ bearerAuth: [] }];
 
 export const healthSchema = {
@@ -91,6 +98,17 @@ export const getUserByIdSchema = {
   },
   response: {
     200: userBasicSchema,
+    400: errorResponseWithIssues,
+    404: errorResponse,
+    500: errorResponse,
+  },
+};
+
+export const getMeSchema = {
+  security: authRequired,
+  response: {
+    200: userWithProfileSchema,
+    401: errorResponse,
     404: errorResponse,
     500: errorResponse,
   },
@@ -132,7 +150,7 @@ export const updateUserSchema = {
   security: authRequired,
   response: {
     200: userBasicSchema,
-    400: errorResponse,
+    400: errorResponseWithIssues,
     403: errorResponse,
     404: errorResponse,
     500: errorResponse,
@@ -156,6 +174,7 @@ export const deleteUserSchema = {
         deletedUser: userBasicSchema,
       },
     },
+    400: errorResponseWithIssues,
     403: errorResponse,
     404: errorResponse,
     500: errorResponse,
@@ -189,7 +208,7 @@ export const loginSchema = {
   },
   response: {
     200: loginResponseSchema,
-    400: errorResponse,
+    400: errorResponseWithIssues,
     401: errorResponse,
     500: errorResponse,
   },
@@ -204,7 +223,18 @@ export const getProfilePictureSchema = {
     required: ["id"],
   },
   response: {
-    200: avatarResponseSchema,
+    200: avatarOnlySchema,
+    400: errorResponseWithIssues,
+    404: errorResponse,
+    500: errorResponse,
+  },
+};
+
+export const getProfilePictureMeSchema = {
+  security: authRequired,
+  response: {
+    200: avatarOnlySchema,
+    401: errorResponse,
     404: errorResponse,
     500: errorResponse,
   },
@@ -228,7 +258,7 @@ export const updateAvatarSchema = {
   security: authRequired,
   response: {
     200: avatarResponseSchema,
-    400: errorResponse,
+    400: errorResponseWithIssues,
     403: errorResponse,
     404: errorResponse,
     500: errorResponse,

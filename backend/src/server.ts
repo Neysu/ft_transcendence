@@ -8,7 +8,7 @@ import swaggerUi from "@fastify/swagger-ui";
 import { prisma } from "./lib/prisma";
 import apiRoutes from "./routes/api/index";
 
-async function buildServer() {
+export async function buildServer() {
   const fastify = Fastify({ logger: true , trustProxy: true});
   const cookiesSecret = process.env.COOKIES_SECRET;
   const jwtSecret = process.env.JWT_SECRET;
@@ -65,7 +65,7 @@ async function buildServer() {
 }
 
 
-async function start() {
+export async function start() {
   let server: ReturnType<typeof Fastify> | null = null;
   try {
     server = await buildServer();
@@ -95,4 +95,6 @@ async function start() {
   process.on("SIGTERM", () => shutdown("SIGTERM"));
 }
 
-start();
+if (process.env.NODE_ENV !== "test") {
+	start();
+}

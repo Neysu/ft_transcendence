@@ -2,7 +2,6 @@
 import type { FastifyInstance } from "fastify";
 import sharp from "sharp";
 import { prisma } from "../prisma";
-import { RegisterSchema } from "./schemasZod";
 import bcrypt from "bcrypt";
 
 export async function createDefaultAvatar(username: string): Promise<string | null> {
@@ -34,18 +33,16 @@ export async function createDefaultAvatar(username: string): Promise<string | nu
 export async function registerUser(
   fastify: FastifyInstance,
   data: { username: string; email: string; password: string }) {
-  const validation = RegisterSchema.parse(data);
-
-  const hashed = await bcrypt.hash(validation.password, 10);
-  const avatar = await createDefaultAvatar(validation.username);
+  const hashed = await bcrypt.hash(data.password, 10);
+  const avatar = await createDefaultAvatar(data.username);
   if (!avatar) {
     throw new Error("Failed to create default avatar");
   }
 
   const user = await prisma.user.create({
     data: {
-      username: validation.username,
-      email: validation.email,
+      username: data.username,
+      email: data.email,
       password: hashed,
       profileImage: avatar ?? null,
     },
