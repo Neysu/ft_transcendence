@@ -17,8 +17,8 @@ services:
       - back
   back:
     image: trans_back
-    #ports:
-    #  - "3000:3000"
+    ports:
+      - 3000:3000
     build:
       context: .
       dockerfile: ./back.Dockerfile
@@ -32,14 +32,17 @@ services:
           action: rebuild
   nginx:
     image: nginx
-    volumes:
-      - ./nginx.conf:/etc/nginx/nginx.conf:ro
-    command: [nginx, '-g', 'daemon off;']
+    build:
+      context: .
+      dockerfile: ./nginx.Dockerfile
+    hostname: ${NGINX_HOST}
+    environment:
+      - HTTPS_NGINX
+      - NGINX_HOST
+      - BACK_HOST
+      - FRONT_HOST
     networks:
       - back
-    ports:
-      - ${HTTPS_NGINX}:${HTTPS_NGINX}
-
 
 networks:
   back:
