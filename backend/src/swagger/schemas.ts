@@ -24,6 +24,14 @@ const userBasicSchema = {
   },
 };
 
+const userPublicSchema = {
+  type: "object",
+  properties: {
+    id: { type: "number" },
+    username: { type: "string" },
+  },
+};
+
 const userWithProfileSchema = {
   type: "object",
   properties: {
@@ -81,7 +89,7 @@ export const getUsersSchema = {
     200: {
       type: "object",
       properties: {
-        users: { type: "array", items: userBasicSchema },
+        users: { type: "array", items: userPublicSchema },
       },
     },
     500: errorResponse,
@@ -97,7 +105,7 @@ export const getUserByIdSchema = {
     required: ["id"],
   },
   response: {
-    200: userBasicSchema,
+    200: userPublicSchema,
     400: errorResponseWithIssues,
     404: errorResponse,
     500: errorResponse,

@@ -22,12 +22,12 @@ export async function findUserByIdOrUsername(
     });
   }
 
-  return user;
+  return (user);
 }
 
 export async function userExistsByEmailOrUsername(email?: string, username?: string) {
   if (!email && !username) {
-    return false;
+    return (false);
   }
 
   const user = await prisma.user.findFirst({

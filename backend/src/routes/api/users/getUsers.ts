@@ -9,9 +9,9 @@ export async function getUsers(fastify: FastifyInstance) {
     fastify.get("/", { schema: getUsersSchema }, async (request, reply) => {
       try {
         const users = await prisma.user.findMany({
-          select: { id: true, username: true, email: true },
+          select: { id: true, username: true },
         });
-        return { users };
+        return { users } as { users: { id: number; username: string }[] };
       } catch (error) {
         fastify.log.error({ err: error }, "Failed to fetch users:");
         reply.code(500);

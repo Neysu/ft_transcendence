@@ -1,15 +1,20 @@
+import "dotenv/config";
 import Fastify from "fastify";
-import { Prisma } from "@prisma/client";
 import cookie from "@fastify/cookie";
 import jwt from "@fastify/jwt";
 import fastifyMultipart from "@fastify/multipart";
+import fastifyStatic from "@fastify/static";
 import swagger from "@fastify/swagger";
 import swaggerUi from "@fastify/swagger-ui";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { prisma } from "./lib/prisma";
 import apiRoutes from "./routes/api/index";
 
 export async function buildServer() {
   const fastify = Fastify({ logger: true , trustProxy: true});
+  const __filename = fileURLToPath(import.meta.url);
+  const __dirname = path.dirname(__filename);
   const cookiesSecret = process.env.COOKIES_SECRET;
   const jwtSecret = process.env.JWT_SECRET;
   if (!cookiesSecret || !jwtSecret) {
@@ -30,9 +35,14 @@ export async function buildServer() {
     },
   });
 
-  fastify.get('/cookies', async (request, reply) => {
-    return request.cookies;
+  fastify.register(fastifyStatic, {
+    root: path.join(__dirname, "..", "public"),
+    prefix: "/public/",
   });
+
+  // fastify.get("/cookies", async (request) => {
+  //   return request.cookies;
+  // });
 
   await fastify.register(swagger, {
     openapi: {
@@ -70,8 +80,10 @@ export async function start() {
   try {
     server = await buildServer();
 
-    await server.listen({ port: 3000, host: '0.0.0.0' });
-    console.log(`Server listening at http://localhost:3000`);
+    const port = Number(process.env.BACK_PORT) || 3000;
+    const host = process.env.BACK_HOST ?? "0.0.0.0";
+    await server.listen({ port, host });
+    console.log(`Server listening at http://${host}:${port}`);
 
   } catch (err) {
     if (server) {

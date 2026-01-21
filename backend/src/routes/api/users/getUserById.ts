@@ -14,11 +14,7 @@ export async function getUserById(fastify: FastifyInstance) {
         if (!params) {
           return;
         }
-        const user = await findUserByIdOrUsername(params.id, {
-          id: true,
-          username: true,
-          email: true,
-        });
+        const user = await findUserByIdOrUsername(params.id, {id: true, username: true, });
         if (!user) {
           reply.code(404);
           return { status: "error", message: "User not found" };
