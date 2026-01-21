@@ -69,6 +69,8 @@ const avatarOnlySchema = {
   },
 };
 
+const moveEnum = { type: "string", enum: ["ROCK", "PAPER", "SCISSORS"] };
+
 const authRequired = [{ bearerAuth: [] }];
 
 export const healthSchema = {
@@ -269,6 +271,30 @@ export const updateAvatarSchema = {
     400: errorResponseWithIssues,
     403: errorResponse,
     404: errorResponse,
+    500: errorResponse,
+  },
+};
+
+export const rpsPlaySchema = {
+  body: {
+    type: "object",
+    required: ["player1"],
+    properties: {
+      player1: moveEnum,
+      player2: moveEnum,
+      useAI: { type: "boolean", default: false },
+    },
+  },
+  response: {
+    200: {
+      type: "object",
+      properties: {
+        player1: moveEnum,
+        player2: moveEnum,
+        outcome: { type: "string", enum: ["PLAYER1", "PLAYER2", "DRAW"] },
+      },
+    },
+    400: errorResponseWithIssues,
     500: errorResponse,
   },
 };

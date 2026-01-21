@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+const MoveEnum = z.enum(["ROCK", "PAPER", "SCISSORS"]);
+
 // Schema for user registration
 export const RegisterSchema = z.object({
   username: z
@@ -48,3 +50,14 @@ export const AvatarUpdateSchema = z.object({
 export const UserIdParamSchema = z.object({
   id: z.string().min(1, "L'id est requis"),
 });
+
+export const RpsPlaySchema = z
+  .object({
+    player1: MoveEnum,
+    player2: MoveEnum.optional(),
+    useAI: z.boolean().optional().default(false),
+  })
+  .refine((data) => Boolean(data.useAI) || Boolean(data.player2), {
+    message: "Fournir player2 ou activer useAI",
+    path: ["player2"],
+  });
