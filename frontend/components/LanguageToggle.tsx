@@ -5,16 +5,17 @@ import { useLanguage } from "./LanguageProvider";
 /**
  * LanguageToggle Component
  * 
- * A button that displays the opposite language code and allows users to switch
- * between English and French. Shows "FR" when English is active and "EN" when
- * French is active, making it clear what language you'll switch TO.
+ * A button that displays the next language code and allows users to switch
+ * between English, French, and Spanish. Shows what language you'll switch TO.
  */
 export default function LanguageToggle() {
   // Access current language and toggle function from context
   const { language, toggleLanguage } = useLanguage();
 
+  const nextLanguages = { en: "FR", fr: "ES", es: "EN" } as const;
+
   return (
-    // Language toggle button - shows opposite language code
+    // Language toggle button - shows next language code
     <button
       onClick={toggleLanguage}
       className="px-4 py-2 rounded-lg font-medium transition-colors border"
@@ -26,8 +27,8 @@ export default function LanguageToggle() {
       }}
       aria-label="Toggle language"
     >
-      {/* Display opposite language: "FR" when English is active, "EN" when French is active */}
-      {language === "en" ? "FR" : "EN"}
+      {/* Display next language */}
+      {nextLanguages[language]}
     </button>
   );
 }

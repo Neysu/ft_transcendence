@@ -10,7 +10,7 @@ import { createContext, useContext, useEffect, useState } from "react";
  */
 
 // Type for supported languages
-type Language = "en" | "fr";
+type Language = "en" | "fr" | "es";
 
 // Interface defining the shape of the language context
 interface LanguageContextType {
@@ -29,11 +29,19 @@ const translations = {
     welcome: "Welcome to ft_transcendence",
     content: "Your application content goes here.",
     language: "Language",
+    hello: "Hello",
   },
   fr: {
     welcome: "Bienvenue à ft_transcendence",
     content: "Le contenu de votre application va ici.",
     language: "Langue",
+    hello: "Bonjour",
+  },
+  es: {
+    welcome: "Bienvenido a ft_transcendence",
+    content: "El contenido de tu aplicación va aquí.",
+    language: "Idioma",
+    hello: "Hola",
   },
 };
 
@@ -62,11 +70,12 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   /**
-   * Toggle between English and French
+   * Toggle between English, French, and Spanish
    * Updates state and persists preference to localStorage
    */
   const toggleLanguage = () => {
-    const newLanguage = language === "en" ? "fr" : "en";
+    const languageCycle: Record<Language, Language> = { en: "fr", fr: "es", es: "en" };
+    const newLanguage = languageCycle[language];
     setLanguage(newLanguage);
     // Persist user preference
     localStorage.setItem("language", newLanguage);

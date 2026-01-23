@@ -1,8 +1,10 @@
 "use client";
 
-import ThemeToggle from "./components/ThemeToggle";
-import LanguageToggle from "./components/LanguageToggle";
-import { useLanguage } from "./components/LanguageProvider";
+import ThemeToggle from "@/components/ThemeToggle";
+import LanguageToggle from "@/components/LanguageToggle";
+import { useLanguage } from "@/components/LanguageProvider";
+import { ComponentExample } from "@/components/component-example";
+import { Button } from "@/components/ui/button";
 
 /**
  * Home Page Component
@@ -33,13 +35,15 @@ export default function Home() {
             <ThemeToggle />
           </div>
         </div>
-        
         {/* Content section - placeholder for application content */}
         <div className="space-y-4">
           <p className="text-lg">
             {t("content")}
           </p>
         </div>
+        <Button className="bg-purple-600 hover:bg-purple-700 text-white text-xl px-8 py-4 rounded-lg font-semibold">
+          {t("hello")}
+        </Button>
       </main>
     </div>
   );

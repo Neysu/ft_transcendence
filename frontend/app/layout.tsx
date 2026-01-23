@@ -1,8 +1,11 @@
 // Import Next.js types and utilities
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist, Geist_Mono, Inter } from "next/font/google";
 import "./globals.css";
-import { LanguageProvider } from "./components/LanguageProvider";
+import { LanguageProvider } from "@/components/LanguageProvider";
+
+const inter = Inter({subsets:['latin'],variable:'--font-sans'});
+
 
 // Configure the Geist Sans font with CSS variable
 const geistSans = Geist({
@@ -29,7 +32,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" className={inter.variable}>
       <body
         // Apply font variables and antialiasing to all text
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
