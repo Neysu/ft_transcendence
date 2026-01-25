@@ -43,10 +43,6 @@ export const UpdateUserSchema = z
     path: ["username"],
   });
 
-export const AvatarUpdateSchema = z.object({
-  profileImage: z.string().min(1, "Le profileImage est requis"),
-});
-
 export const UserIdParamSchema = z.object({
   id: z.string().min(1, "L'id est requis"),
 });

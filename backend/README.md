@@ -11,7 +11,7 @@ nvm install 22
 nvm use 22
 bun install # This inatll all dependencies
 bun prisma migrate dev  # This creates the database and generates the necessary migration files and Prisma client
-bun run src/test.ts  # This runs a small test that creates a default user and a post to verify the database setup
+bun prisma generate
 bun prisma studio  # Opens Prisma Studio to view and edit the database
 ```
 

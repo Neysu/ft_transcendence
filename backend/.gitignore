@@ -37,6 +37,9 @@ report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
 *.sqlite
 /src/generated/prisma
 
+# uploaded files
+/public
+
 # test
 
 /test

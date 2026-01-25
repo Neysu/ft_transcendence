@@ -43,6 +43,14 @@ export async function updateUser(fastify: FastifyInstance) {
 
           return updatedUser;
         } catch (error) {
+          if (error && typeof error === "object" && "code" in error) {
+            const prismaError = error as { code?: string };
+            if (prismaError.code === "P2002") {
+              reply.code(409);
+              return { status: "error", message: "User already exists" };
+            }
+          }
+
           fastify.log.error({ err: error }, "Failed to update user:");
           reply.code(500);
           return { status: "error", message: "Failed to update user" };

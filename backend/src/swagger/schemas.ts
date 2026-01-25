@@ -163,6 +163,7 @@ export const updateUserSchema = {
     400: errorResponseWithIssues,
     403: errorResponse,
     404: errorResponse,
+    409: errorResponse,
     500: errorResponse,
   },
 };
@@ -251,6 +252,7 @@ export const getProfilePictureMeSchema = {
 };
 
 export const updateAvatarSchema = {
+  consumes: ["multipart/form-data"],
   params: {
     type: "object",
     properties: {
@@ -260,17 +262,38 @@ export const updateAvatarSchema = {
   },
   body: {
     type: "object",
-    required: ["profileImage"],
+    required: ["avatar"],
     properties: {
-      profileImage: { type: "string" },
+      avatar: {
+        type: "string",
+        format: "binary",
+        description: "Avatar image file (multipart/form-data)",
+      },
     },
   },
   security: authRequired,
   response: {
     200: avatarResponseSchema,
-    400: errorResponseWithIssues,
-    403: errorResponse,
+    400: {
+      ...errorResponse,
+      examples: [
+        { status: "error", message: "Avatar file is required (field name: avatar)" },
+        { status: "error", message: "Invalid file type (allowed: png, jpeg, jpg, webp, gif)" },
+      ],
+    },
+    401: {
+      ...errorResponse,
+      examples: [{ status: "error", message: "Unauthorized: missing or invalid token" }],
+    },
+    403: {
+      ...errorResponse,
+      examples: [{ status: "error", message: "Forbidden: you can only change your own avatar" }],
+    },
     404: errorResponse,
+    413: {
+      ...errorResponse,
+      examples: [{ status: "error", message: "Avatar file too large (max 5MB)" }],
+    },
     500: errorResponse,
   },
 };
