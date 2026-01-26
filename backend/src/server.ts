@@ -2,6 +2,7 @@ import "dotenv/config";
 import Fastify from "fastify";
 import cookie from "@fastify/cookie";
 import jwt from "@fastify/jwt";
+import crypto from "crypto";
 import fastifyMultipart from "@fastify/multipart";
 import fastifyStatic from "@fastify/static";
 import swagger from "@fastify/swagger";
@@ -11,21 +12,47 @@ import { fileURLToPath } from "node:url";
 import { prisma } from "./lib/prisma";
 import apiRoutes from "./routes/api/index";
 
+
 export async function buildServer() {
+  // --- JWT secret rotation logic ---
+  const cookiesSecret = process.env.COOKIES_SECRET;
+  let currentSecret = process.env.JWT_SECRET || crypto.randomBytes(32).toString("hex");
+  let previousSecret = currentSecret;
+  if (!cookiesSecret || !currentSecret) {
+    throw new Error("COOKIES_SECRET and JWT_SECRET must be set");
+  }
+
+  // Rotate JWT secret every 30 minutes
+  setInterval(() => {
+    previousSecret = currentSecret;
+    currentSecret = crypto.randomBytes(32).toString("hex");
+    console.log("JWT secret rotated");
+  }, 30 * 60 * 1000);
+
   const fastify = Fastify({ logger: true , trustProxy: true});
   const __filename = fileURLToPath(import.meta.url);
   const __dirname = path.dirname(__filename);
-  const cookiesSecret = process.env.COOKIES_SECRET;
-  const jwtSecret = process.env.JWT_SECRET;
-  if (!cookiesSecret || !jwtSecret) {
-    throw new Error("COOKIES_SECRET and JWT_SECRET must be set");
-  }
 
   fastify.register(cookie, {
     secret: cookiesSecret,
   });
+  // Register JWT with dynamic secret function
   fastify.register(jwt, {
-    secret: jwtSecret,
+    secret: async () => currentSecret,
+  });
+
+  // Custom decorator for dual-secret verification
+  fastify.decorate("authenticate", async function(request, reply) {
+    try {
+      await request.jwtVerify({ secret: currentSecret });
+    } catch (err) {
+      // Try previous secret for grace period
+      try {
+        await request.jwtVerify({ secret: previousSecret });
+      } catch (err2) {
+        reply.code(401).send({ message: "Invalid or expired token" });
+      }
+    }
   });
 
   fastify.register(fastifyMultipart as any, {
@@ -70,10 +97,8 @@ export async function buildServer() {
   });
 
   await fastify.register(apiRoutes, { prefix: "/api" });
-
   return (fastify);
 }
-
 
 export async function start() {
   let server: ReturnType<typeof Fastify> | null = null;
