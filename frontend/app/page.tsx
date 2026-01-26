@@ -41,7 +41,7 @@ export default function Home() {
             {t("content")}
           </p>
         </div>
-        <Button className="bg-purple-600 hover:bg-purple-700 text-white text-xl px-8 py-4 rounded-lg font-semibold">
+        <Button className="hover:bg-purple-700 text-white text-xl px-8 py-4 rounded-lg font-semibold">
           {t("hello")}
         </Button>
       </main>
