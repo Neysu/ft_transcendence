@@ -4,14 +4,13 @@ import React from "react";
 export interface CardPanelProps {
   children: React.ReactNode;
   className?: string;
-  opacity?: number; // Optional opacity prop (0-1)
 }
 
 /**
  * Molecule: CardPanel
  * A reusable card/panel container with theme-aware background and shadow.
  */
-export const CardPanel: React.FC<CardPanelProps> = ({ children, className = "", opacity = 0.95 }) => {
+export const CardPanel: React.FC<CardPanelProps> = ({ children, className = "" }) => {
   // Theme detection
   const [theme, setTheme] = React.useState<string>("green");
   React.useEffect(() => {
@@ -25,15 +24,15 @@ export const CardPanel: React.FC<CardPanelProps> = ({ children, className = "", 
     return () => observer.disconnect();
   }, []);
 
-  // Theme-based background
-  // Purple theme: #D9D9D9; Green theme: light green #E6FFD6
-  const bgColor = theme === "purple" ? "#D9D9D9" : "#E6FFD6";
+  // Theme-based background with alpha for transparency (95% opacity)
+  // Purple theme: #D9D9D9F2 (95% opacity); Green theme: #E6FFD6F2 (95% opacity)
+  const bgColor = theme === "purple" ? "#D9D9D9F2" : "#E6FFD6F2";
   const border = theme === "purple" ? "border-[#9D33FA]" : "border-[#9BFA32]";
 
   return (
     <div
       className={`w-full lg:w-3/4 mx-auto h-[33vh] rounded-2xl shadow-lg border ${border} p-8 flex flex-col items-center ${className}`}
-      style={{ backgroundColor: bgColor, opacity }}
+      style={{ backgroundColor: bgColor }}
     >
       {children}
     </div>

@@ -32,6 +32,10 @@ const translations = {
     hello: "Hello",
     signIn: "Sign in",
     signUp: "Sign up",
+    changeemailaddress: "Change email address",
+    changeusername: "Change username",
+    changeprofilepicture: "Change profile picture",
+    changepassword: "Change password",
   },
   fr: {
     welcome: "Bienvenue à ft_transcendence",
@@ -40,6 +44,10 @@ const translations = {
     hello: "Bonjour",
     signIn: "Se connecter",
     signUp: "S'inscrire",
+    changeemailaddress: "Changer l'adresse e-mail",
+    changeusername: "Changer le nom d'utilisateur",
+    changeprofilepicture: "Changer la photo de profil",
+    changepassword: "Changer le mot de passe",
   },
   es: {
     welcome: "Bienvenido a ft_transcendence",
@@ -48,6 +56,10 @@ const translations = {
     hello: "Hola",
     signIn: "Iniciar sesión",
     signUp: "Registrarse",
+    changeemailaddress: "Cambiar dirección de correo electrónico",
+    changeusername: "Cambiar nombre de usuario",
+    changeprofilepicture: "Cambiar foto de perfil",
+    changepassword: "Cambiar contraseña",
   },
 };
 

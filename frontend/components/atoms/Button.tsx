@@ -29,14 +29,14 @@ export const ButtonBasic1: React.FC<ButtonProps> = ({ variant = "primary", child
   if (variant === "primary") {
     base = theme === "purple"
       ? "bg-[#E1DDB1] text-[#3A0766] hover:bg-[#BEBCA1]"
-      : "bg-[#9D33FA] text-[#D9D9D9] hover:bg-purple-700"; // purple bg, same text as left arrow
+      : "bg-[#9D33FA] text-[#D9D9D9] hover:bg-purple-700";
   } else {
-    base = "bg-transparent border border-white text-white hover:bg-white hover:text-black";
+    base = "bg-[#E1DDB1] text-[#3A0766] border border-[#3A0766] hover:bg-[#BEBCA1]";
   }
 
   return (
     <button
-      className={`w-40 h-12 flex items-center justify-center rounded-full font-semibold shadow-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black ${base} ${className}`}
+      className={`w-56 h-16 flex items-center justify-center rounded-full font-semibold shadow-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black ${base} ${className}`}
       {...props}
     >
       <span className="truncate w-full px-2 text-center block">{children}</span>
