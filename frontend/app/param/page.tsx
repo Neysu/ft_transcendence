@@ -11,7 +11,7 @@ export default function ParamPage() {
   const { t } = useLanguage();
   const router = useRouter();
   return (
-    <main className="relative min-h-screen flex flex-col items-center justify-center gap-4">
+    <main className="relative min-h-[calc(100vh-160px)] flex flex-col items-center justify-center gap-4">
       <div className="absolute top-4 left-4">
         <ButtonCircleBack onClick={() => router.back()} />
       </div>

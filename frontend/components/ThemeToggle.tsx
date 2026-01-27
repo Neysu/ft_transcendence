@@ -46,7 +46,7 @@ export default function ThemeToggle() {
       style={{
         backgroundColor:
           theme === "purple"
-            ? "#9BFA32" // green background when purple theme
+            ? "#99fa32" // green background when purple theme
             : "#9D33FA", // purple background when green theme
       }}
       aria-label="Toggle theme"

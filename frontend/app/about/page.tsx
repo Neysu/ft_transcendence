@@ -10,7 +10,7 @@ export default function AboutPage() {
   const { t } = useLanguage();
   const router = useRouter();
   return (
-    <main className="min-h-screen flex flex-col items-center justify-center gap-4">
+    <main className="min-h-[calc(100vh-160px)] flex flex-col items-center justify-center gap-4">
       <CardPanel>
         <div className="flex flex-col items-center gap-4">
           <ButtonBasic1>{t("hello")}</ButtonBasic1>

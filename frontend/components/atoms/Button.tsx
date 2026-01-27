@@ -36,7 +36,7 @@ export const ButtonBasic1: React.FC<ButtonProps> = ({ variant = "primary", child
 
   return (
     <button
-      className={`w-56 h-16 flex items-center justify-center rounded-full font-semibold shadow-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black ${base} ${className}`}
+      className={`w-40 h-12 flex items-center justify-center rounded-full font-semibold shadow-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black ${base} ${className}`}
       {...props}
     >
       <span className="truncate w-full px-2 text-center block">{children}</span>

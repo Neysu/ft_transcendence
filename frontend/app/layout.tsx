@@ -9,6 +9,7 @@ import { ThemeSync } from "@/components/ThemeSync";
 import ThemeToggle from "@/components/ThemeToggle";
 import LanguageToggle from "@/components/LanguageToggle";
 import ExtraInfo from "@/components/atoms/ExtraInfo";
+import { Logo } from "@/components/Logo";
 
 const inter = Inter({subsets:['latin'],variable:'--font-sans'});
 
@@ -64,6 +65,7 @@ export default function RootLayout({
         {/* <div className="fixed inset-0 z-0 bg-gradient-to-br from-gray-900 to-gray-700 opacity-60 pointer-events-none" /> */}
         <ThemeSync>
           <LanguageProvider>
+            <Logo />
             {/* Fixed position toggles at top right */}
             <div style={{ position: "fixed", top: 16, right: 16, zIndex: 50, display: "flex", gap: 12 }}>
               <ThemeToggle />
