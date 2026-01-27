@@ -28,7 +28,7 @@ export const ButtonBasic1: React.FC<ButtonProps> = ({ variant = "primary", child
   let base = "";
   if (variant === "primary") {
     base = theme === "purple"
-      ? "bg-[#D9D9D9] text-[#3A0766] hover:bg-gray-300"
+      ? "bg-[#E1DDB1] text-[#3A0766] hover:bg-[#BEBCA1]"
       : "bg-[#9D33FA] text-[#D9D9D9] hover:bg-purple-700"; // purple bg, same text as left arrow
   } else {
     base = "bg-transparent border border-white text-white hover:bg-white hover:text-black";

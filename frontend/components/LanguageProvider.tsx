@@ -30,18 +30,24 @@ const translations = {
     content: "Your application content goes here.",
     language: "Language",
     hello: "Hello",
+    signIn: "Sign in",
+    signUp: "Sign up",
   },
   fr: {
     welcome: "Bienvenue à ft_transcendence",
     content: "Le contenu de votre application va ici.",
     language: "Langue",
     hello: "Bonjour",
+    signIn: "Se connecter",
+    signUp: "S'inscrire",
   },
   es: {
     welcome: "Bienvenido a ft_transcendence",
     content: "El contenido de tu aplicación va aquí.",
     language: "Idioma",
     hello: "Hola",
+    signIn: "Iniciar sesión",
+    signUp: "Registrarse",
   },
 };
 

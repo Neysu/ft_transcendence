@@ -8,6 +8,7 @@ import { LanguageProvider } from "@/components/LanguageProvider";
 import { ThemeSync } from "@/components/ThemeSync";
 import ThemeToggle from "@/components/ThemeToggle";
 import LanguageToggle from "@/components/LanguageToggle";
+import ExtraInfo from "@/components/atoms/ExtraInfo";
 
 const inter = Inter({subsets:['latin'],variable:'--font-sans'});
 
@@ -71,6 +72,7 @@ export default function RootLayout({
             {children}
           </LanguageProvider>
         </ThemeSync>
+        <ExtraInfo />
       </body>
     </html>
   );
