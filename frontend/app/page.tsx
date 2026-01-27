@@ -29,11 +29,6 @@ export default function Home() {
             {t("welcome")}
           </h1>
           
-          {/* Toggle buttons for language and theme */}
-          <div className="flex items-center gap-4">
-            <LanguageToggle />
-            <ThemeToggle />
-          </div>
         </div>
         {/* Content section - placeholder for application content */}
         <div className="space-y-4">
@@ -41,9 +36,6 @@ export default function Home() {
             {t("content")}
           </p>
         </div>
-        <Button className="hover:bg-purple-700 text-white text-xl px-8 py-4 rounded-lg font-semibold">
-          {t("hello")}
-        </Button>
       </main>
     </div>
   );
