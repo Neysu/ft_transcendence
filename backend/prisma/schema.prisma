@@ -18,6 +18,14 @@ model User {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
   posts        Post[]
+
+  // Système d'amis (self-relation many-to-many)
+  friends      User[]   @relation("UserFriends")
+  friendOf     User[]   @relation("UserFriends")
+
+  // Chat
+  sentMessages     Message[] @relation("SentMessages")
+  receivedMessages Message[] @relation("ReceivedMessages")
 }
 
 model Post {
@@ -28,3 +36,19 @@ model Post {
   authorId  Int
   createdAt DateTime @default(now())
 }
+
+model Message {
+  id         Int      @id @default(autoincrement())
+  content    String
+  createdAt  DateTime @default(now())
+
+  sender     User     @relation("SentMessages", fields: [senderId], references: [id])
+  senderId   Int
+
+  receiver   User     @relation("ReceivedMessages", fields: [receiverId], references: [id])
+  receiverId Int
+
+  @@index([senderId])
+  @@index([receiverId])
+}
+
