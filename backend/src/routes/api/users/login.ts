@@ -1,9 +1,11 @@
+
 import type { FastifyInstance } from "fastify";
 import { prisma } from "../../../lib/prisma";
 import bcrypt from "bcrypt";
 import { LoginSchema } from "../../../lib/api/schemasZod";
 import { parseOrReply } from "../../../lib/api/validation";
 import { loginSchema } from "../../../swagger/schemas";
+import crypto from "crypto";
 
 export async function loginUser(fastify: FastifyInstance) {
   fastify.register(async function (fastify) {
@@ -46,7 +48,15 @@ export async function loginUser(fastify: FastifyInstance) {
           return { status: "error", message: "Invalid credentials" };
         }
 
-        const token = fastify.jwt.sign({ id: user.id });
+        // Issue access token
+        const token = fastify.jwt.sign({ id: user.id, username: user.username });
+
+        // Generate and store refresh token (in-memory for demo)
+        const refreshToken = crypto.randomBytes(32).toString("hex");
+        if (!fastify.refreshTokens) fastify.refreshTokens = new Set();
+        fastify.refreshTokens.add(refreshToken);
+        reply.setCookie("refreshToken", refreshToken, { httpOnly: true, path: "/" });
+
         return {
           token,
           id: user.id,

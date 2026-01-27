@@ -14,20 +14,12 @@ import apiRoutes from "./routes/api/index";
 
 
 export async function buildServer() {
-  // --- JWT secret rotation logic ---
+  // --- JWT static secret and expiry ---
   const cookiesSecret = process.env.COOKIES_SECRET;
-  let currentSecret = process.env.JWT_SECRET || crypto.randomBytes(32).toString("hex");
-  let previousSecret = currentSecret;
-  if (!cookiesSecret || !currentSecret) {
+  const jwtSecret = process.env.JWT_SECRET;
+  if (!cookiesSecret || !jwtSecret) {
     throw new Error("COOKIES_SECRET and JWT_SECRET must be set");
   }
-
-  // Rotate JWT secret every 30 minutes
-  setInterval(() => {
-    previousSecret = currentSecret;
-    currentSecret = crypto.randomBytes(32).toString("hex");
-    console.log("JWT secret rotated");
-  }, 30 * 60 * 1000);
 
   const fastify = Fastify({ logger: true , trustProxy: true});
   const __filename = fileURLToPath(import.meta.url);
@@ -36,23 +28,57 @@ export async function buildServer() {
   fastify.register(cookie, {
     secret: cookiesSecret,
   });
-  // Register JWT with dynamic secret function
+  // Register JWT with static secret and expiry
   fastify.register(jwt, {
-    secret: async () => currentSecret,
+    secret: jwtSecret,
+    sign: { expiresIn: "15m" }, // or "30m" for longer sessions
   });
 
-  // Custom decorator for dual-secret verification
+  // Custom decorator for authentication
   fastify.decorate("authenticate", async function(request, reply) {
     try {
-      await request.jwtVerify({ secret: currentSecret });
+      await request.jwtVerify();
     } catch (err) {
-      // Try previous secret for grace period
-      try {
-        await request.jwtVerify({ secret: previousSecret });
-      } catch (err2) {
-        reply.code(401).send({ message: "Invalid or expired token" });
-      }
+      reply.code(401).send({ message: "Invalid or expired token" });
     }
+  });
+
+  // --- Simple in-memory refresh token store (for demo only) ---
+  const refreshTokens = new Set<string>();
+
+  // Helper to generate a random refresh token
+  function generateRefreshToken() {
+    return crypto.randomBytes(32).toString("hex");
+  }
+
+  // Example: Issue refresh token on login (stub, add to your login route)
+  // const refreshToken = generateRefreshToken();
+  // refreshTokens.add(refreshToken);
+  // reply.setCookie("refreshToken", refreshToken, { httpOnly: true, path: "/" });
+
+  // --- JWT refresh route ---
+  fastify.post("/api/jwt/refresh", async (request, reply) => {
+    // Get refresh token from cookie or body
+    const refreshToken = request.cookies.refreshToken || request.body?.refreshToken;
+    if (!refreshToken || !refreshTokens.has(refreshToken)) {
+      return reply.code(401).send({ error: "Invalid refresh token" });
+    }
+    // Optionally: remove used refresh token for one-time use
+    // refreshTokens.delete(refreshToken);
+    // Issue new access token
+    const payload = { userId: "demo" }; // Replace with real user info
+    const accessToken = await reply.jwtSign(payload, { expiresIn: "15m" });
+    reply.send({ accessToken });
+  });
+
+  // --- JWT logout route ---
+  fastify.post("/api/jwt/logout", async (request, reply) => {
+    const refreshToken = request.cookies.refreshToken || request.body?.refreshToken;
+    if (refreshToken) {
+      refreshTokens.delete(refreshToken);
+      reply.clearCookie("refreshToken", { path: "/" });
+    }
+    reply.send({ success: true });
   });
 
   fastify.register(fastifyMultipart as any, {
