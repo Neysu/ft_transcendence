@@ -1,5 +1,9 @@
-FROM oven/bun AS builder
+FROM oven/bun:latest
+
 WORKDIR /app
+
+ENV PORT=8080
+EXPOSE 8080
 
 COPY ./frontend/package.json ./
 RUN bun install
@@ -7,9 +11,4 @@ RUN bun install
 COPY ./frontend/ .
 RUN bun next build
 
-FROM oven/bun
-WORKDIR /app
-
-COPY ./frontend/ .
-
-CMD ["bun", "start"]
+CMD ["bun", "next", "start"]

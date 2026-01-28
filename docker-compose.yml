@@ -13,8 +13,11 @@ services:
       - FRONT_HTTPS_PORT
       - BACK_HOST
       - BACK_HTTP_PORT
+      - HOST
     networks:
-      - back
+      - net
+    ports:
+      - 8080:8080
   back:
     image: trans_back
     ports:
@@ -24,29 +27,39 @@ services:
       dockerfile: ./back.Dockerfile
     hostname: ${BACK_HOST}
     environment:
+      - HOST
+      - NGINX_HOST
       - BACK_HOST
       - BACK_HTTP_PORT
     develop:
       watch:
         - path: ./front.Dockerfile
           action: rebuild
+    networks:
+      - net
   nginx:
     image: nginx
+    ports:
+      - 443:443
+      - 80:80
     build:
       context: .
       dockerfile: ./nginx.Dockerfile
     hostname: ${NGINX_HOST}
+    volumes:
+      - ./nginx:/etc/nginx/conf.d/:ro
+      - ./certs:/etc/nginx/certs/:ro
     environment:
       - HTTPS_NGINX
       - NGINX_HOST
       - BACK_HOST
       - FRONT_HOST
+      - HOST
     networks:
-      - back
+      - net
 
 networks:
-  back:
-    name: backend
+  net:
 
 volumes:
   sqlite-db:

@@ -19,4 +19,6 @@ COPY --from=install /temp/prod/node_modules node_modules
 COPY --from=prerelease /app/ .
 
 EXPOSE 3000/tcp
+RUN bun prisma migrate dev
+RUN bun prisma generate
 CMD ["bun", "run", "index.ts"]
