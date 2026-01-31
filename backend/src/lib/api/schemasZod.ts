@@ -57,3 +57,24 @@ export const RpsPlaySchema = z
     message: "Fournir player2 ou activer useAI",
     path: ["player2"],
   });
+
+export const FriendRequestSchema = z.object({
+  toUserId: z.number().int().positive(),
+});
+
+export const FriendAcceptSchema = z.object({
+  fromUserId: z.number().int().positive(),
+});
+
+export const FriendRejectSchema = z.object({
+  fromUserId: z.number().int().positive(),
+});
+
+export const MessagesParamsSchema = z.object({
+  userId: z.coerce.number().int().positive(),
+});
+
+export const MessagesQuerySchema = z.object({
+  limit: z.coerce.number().int().min(1).max(100).optional(),
+  cursor: z.coerce.number().int().positive().optional(),
+});

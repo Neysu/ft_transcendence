@@ -10,6 +10,8 @@ import { loginUser } from "./login";
 import { getMyProfilePicture } from "./avatar/getMyProfilePicture";
 import { getProfilePicture } from "./avatar/getProfilePicture";
 import { updateAvatar } from "./avatar/updateAvatar";
+import { Friends } from "./friends";
+import { Messages } from "./messages";
 
 export async function Users(fastify: FastifyInstance) {
   fastify.register(getUsers);
@@ -21,5 +23,7 @@ export async function Users(fastify: FastifyInstance) {
   fastify.register(getMyProfilePicture);
   fastify.register(getProfilePicture);
   fastify.register(updateAvatar);
+  fastify.register(Friends, { prefix: "/friends" });
+  fastify.register(Messages, { prefix: "/messages" });
   fastify.register(deleteUser);
 }
