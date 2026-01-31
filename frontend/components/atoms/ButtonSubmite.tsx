@@ -6,7 +6,7 @@ export interface ButtonSubmiteProps extends React.ButtonHTMLAttributes<HTMLButto
 
 /**
  * Atom: ButtonSubmite
- * A square button with 37% opacity purple background and language-aware text.
+ * A theme-aware submit button with smooth transitions and scale animations.
  */
 export const ButtonSubmite: React.FC<ButtonSubmiteProps> = ({ className = "", ...props }) => {
   const { language } = useLanguage();
@@ -26,17 +26,14 @@ export const ButtonSubmite: React.FC<ButtonSubmiteProps> = ({ className = "", ..
   // Text for each language
   const text = language === "fr" ? "Soumettre" : language === "es" ? "Enviar" : "Submit";
 
-  // Theme-based color
-  // For purple theme: #9D33FA at 37% opacity; for green theme: #9BFA32 at 37% opacity
-  const bg = theme === "purple"
-    ? "bg-[#9D33FA]/[0.37] hover:bg-[#7c25c2]/[0.37]"
-    : "bg-[#9BFA32]/[0.37] hover:bg-[#7cbe29]/[0.37]";
-  const textColor = theme === "purple" ? "text-white" : "text-[#3A0766]";
+  // Theme-based background color
+  // Green theme: #9BFA32, Purple theme: #9D33FA
+  const backgroundColor = theme === "purple" ? "#9D33FA" : "#9BFA32";
 
   return (
     <button
-      className={`min-w-16 h-16 px-4 ${bg} ${textColor} font-bold rounded-lg shadow-lg flex items-center justify-center text-base transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black ${className}`}
-      style={{ width: "auto" }}
+      className={`px-8 py-3 font-semibold rounded-lg transition-transform hover:scale-105 active:scale-95 text-white shadow-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black ${className}`}
+      style={{ backgroundColor }}
       {...props}
     >
       {text}

@@ -12,7 +12,7 @@ export default function LanguageToggle() {
   // Access current language and toggle function from context
   const { language, toggleLanguage } = useLanguage();
 
-  const nextLanguages = { en: "FR", fr: "ES", es: "EN" } as const;
+  const nextLanguages = { en: "EN", fr: "FR", es: "ES" } as const;
 
   return (
     // Language toggle button - shows next language code

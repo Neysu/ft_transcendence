@@ -29,7 +29,7 @@ export const ButtonCircleBack: React.FC<ButtonCircleBackProps> = ({ className = 
 
   return (
     <button
-      className={`w-12 h-12 flex items-center justify-center rounded-full shadow-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black ${bg} ${text} ${className}`}
+      className={`w-12 h-12 flex items-center justify-center rounded-full shadow-lg transition-colors transition-transform duration-200 hover:scale-110 active:scale-95 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black ${bg} ${text} ${className}`}
       aria-label="Go back"
       {...props}
     >

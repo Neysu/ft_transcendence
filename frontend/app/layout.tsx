@@ -67,14 +67,14 @@ export default function RootLayout({
           <LanguageProvider>
             <Logo />
             {/* Fixed position toggles at top right */}
-            <div style={{ position: "fixed", top: 16, right: 16, zIndex: 50, display: "flex", gap: 12 }}>
+            <div style={{ position: "fixed", top: 15, right: 16, zIndex: 50, display: "flex", alignItems: "center", gap: 12 }}>
               <ThemeToggle />
               <LanguageToggle />
             </div>
             {children}
+            <ExtraInfo />
           </LanguageProvider>
         </ThemeSync>
-        <ExtraInfo />
       </body>
     </html>
   );
