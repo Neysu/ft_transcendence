@@ -1,4 +1,6 @@
 import type { FastifyInstance } from "fastify";
+import { unlink } from "node:fs/promises";
+import path from "node:path";
 import { prisma } from "../../../lib/prisma";
 import { findUserByIdOrUsername } from "../../../lib/api/userUtils";
 import { UserIdParamSchema } from "../../../lib/api/schemasZod";
@@ -22,6 +24,7 @@ export async function deleteUser(fastify: FastifyInstance) {
           id: true,
           username: true,
           email: true,
+          profileImage: true,
         });
 
         if (!user) {
@@ -34,8 +37,29 @@ export async function deleteUser(fastify: FastifyInstance) {
           return { status: "error", message: "Forbidden" };
         }
 
-        await prisma.user.delete({ where: { id: user.id } });
-        return { status: "success", deletedUser: user };
+        const profileImage = user.profileImage;
+        await prisma.$transaction(async (tx) => {
+          await tx.message.deleteMany({
+            where: {
+              OR: [{ senderId: user.id }, { receiverId: user.id }],
+            },
+          });
+          await tx.friendship.deleteMany({
+            where: {
+              OR: [{ requesterId: user.id }, { addresseeId: user.id }],
+            },
+          });
+          await tx.post.deleteMany({ where: { authorId: user.id } });
+          await tx.user.delete({ where: { id: user.id } });
+        });
+        if (profileImage && profileImage.startsWith(`/public/${user.id}/`)) {
+          const filePath = path.join(process.cwd(), profileImage.slice(1));
+          try {
+            await unlink(filePath);
+          } catch {}
+        }
+        const { profileImage: _ignoredProfileImage, ...deletedUser } = user;
+        return { status: "success", deletedUser };
       } catch (error) {
         fastify.log.error({ err: error }, "Failed to delete user:");
         reply.code(500);
