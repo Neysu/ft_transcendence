@@ -18,14 +18,10 @@ model User {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
   posts        Post[]
-
-  // Système d'amis (self-relation many-to-many)
-  friends      User[]   @relation("UserFriends")
-  friendOf     User[]   @relation("UserFriends")
-
-  // Chat
-  sentMessages     Message[] @relation("SentMessages")
-  receivedMessages Message[] @relation("ReceivedMessages")
+  sentMessages         Message[]   @relation("MessagesSent")
+  receivedMessages     Message[]   @relation("MessagesReceived")
+  sentFriendRequests     Friendship[] @relation("FriendRequestsSent")
+  receivedFriendRequests Friendship[] @relation("FriendRequestsReceived")
 }
 
 model Post {
@@ -37,18 +33,39 @@ model Post {
   createdAt DateTime @default(now())
 }
 
+enum FriendshipStatus {
+  PENDING
+  ACCEPTED
+  BLOCKED
+}
+
+model Friendship {
+  id        Int      @id @default(autoincrement())
+  requester   User             @relation("FriendRequestsSent", fields: [requesterId], references: [id])
+  requesterId Int
+  addressee   User             @relation("FriendRequestsReceived", fields: [addresseeId], references: [id])
+  addresseeId Int
+  status      FriendshipStatus @default(PENDING)
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  @@unique([requesterId, addresseeId])
+  @@index([requesterId])
+  @@index([addresseeId])
+}
+
 model Message {
   id         Int      @id @default(autoincrement())
   content    String
   createdAt  DateTime @default(now())
-
-  sender     User     @relation("SentMessages", fields: [senderId], references: [id])
+  deliveredAt DateTime?
+  sender     User     @relation("MessagesSent", fields: [senderId], references: [id])
   senderId   Int
-
-  receiver   User     @relation("ReceivedMessages", fields: [receiverId], references: [id])
+  receiver   User     @relation("MessagesReceived", fields: [receiverId], references: [id])
   receiverId Int
 
   @@index([senderId])
   @@index([receiverId])
+  @@index([createdAt])
+  @@index([deliveredAt])
 }
-
