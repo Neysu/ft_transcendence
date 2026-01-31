@@ -1,15 +1,17 @@
+"use client";
+
 // Import Next.js types and utilities
 import "./globals.css";
 // import "./bg-random.js";
-import type { Metadata } from "next";
 import { Geist, Geist_Mono, Inter } from "next/font/google";
-import "./globals.css";
 import { LanguageProvider } from "@/components/LanguageProvider";
 import { ThemeSync } from "@/components/ThemeSync";
 import ThemeToggle from "@/components/ThemeToggle";
 import LanguageToggle from "@/components/LanguageToggle";
 import ExtraInfo from "@/components/atoms/ExtraInfo";
 import { Logo } from "@/components/Logo";
+import { ProfilePicButton } from "@/components/atoms/ProfilePicButton";
+import { usePathname, useRouter } from "next/navigation";
 
 const inter = Inter({subsets:['latin'],variable:'--font-sans'});
 
@@ -26,21 +28,16 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-// Define metadata for the application (SEO and browser tab)
-export const metadata: Metadata = {
-  title: "ft_trans",
-  description: "ft_trans for 42 :)",
-};
-
 // Root layout component that wraps all pages in the application
-
-
 
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const hideProfileButton = pathname?.startsWith("/landing") || pathname?.startsWith("/extra-info") || pathname?.startsWith("/landing/signin") || pathname?.startsWith("/landing/signup");
   return (
     <html lang="en" className={inter.variable} suppressHydrationWarning>
       <head>
@@ -67,9 +64,14 @@ export default function RootLayout({
           <LanguageProvider>
             <Logo />
             {/* Fixed position toggles at top right */}
-            <div style={{ position: "fixed", top: 15, right: 16, zIndex: 50, display: "flex", alignItems: "center", gap: 12 }}>
-              <ThemeToggle />
-              <LanguageToggle />
+            <div style={{ position: "fixed", top: 15, right: 16, zIndex: 50, display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 12 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                <ThemeToggle />
+                <LanguageToggle />
+              </div>
+              {!hideProfileButton && (
+                <ProfilePicButton onClick={() => router.push("/param")} />
+              )}
             </div>
             {children}
             <ExtraInfo />

@@ -45,7 +45,7 @@
 /* Theme 2: Purple theme (activated via data-theme="purple") */
 [data-theme="purple"] {
   --background: #9D33FA;
-  --foreground: #f1f5f9; /*for text*/
+  --foreground: #1a1a1a; /*for text*/
   --primary: #9D33FA;
   --secondary: #9BFA32;
   --accent: #9D33FA;
