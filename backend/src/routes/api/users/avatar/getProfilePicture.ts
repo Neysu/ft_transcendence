@@ -1,4 +1,5 @@
 import type { FastifyInstance } from "fastify";
+import { getProfileImageOrFallback } from "../../../../lib/api/avatarUtils";
 import { findUserByIdOrUsername } from "../../../../lib/api/userUtils";
 import { UserIdParamSchema } from "../../../../lib/api/schemasZod";
 import { parseOrReply } from "../../../../lib/api/validation";
@@ -15,6 +16,7 @@ export async function getProfilePicture(fastify: FastifyInstance) {
           return;
         }
         const user = await findUserByIdOrUsername(params.id, {
+          id: true,
           profileImage: true,
         });
 
@@ -28,7 +30,8 @@ export async function getProfilePicture(fastify: FastifyInstance) {
           return { status: "error", message: "Profile image not found" };
         }
 
-        return { profileImage: user.profileImage };
+        const resolvedProfileImage = await getProfileImageOrFallback(user.id, user.profileImage);
+        return { profileImage: resolvedProfileImage };
       } catch (error) {
         fastify.log.error({ err: error }, "Failed to fetch profile picture:");
         reply.code(500);

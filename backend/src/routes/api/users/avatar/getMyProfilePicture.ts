@@ -1,4 +1,5 @@
 import type { FastifyInstance } from "fastify";
+import { getProfileImageOrFallback } from "../../../../lib/api/avatarUtils";
 import { prisma } from "../../../../lib/prisma";
 import { authMiddleware } from "../../../../middleware/auth";
 import { getProfilePictureMeSchema } from "../../../../swagger/schemas";
@@ -31,7 +32,11 @@ export async function getMyProfilePicture(fastify: FastifyInstance) {
             return { status: "error", message: "Profile image not found" };
           }
 
-          return { profileImage: user.profileImage };
+          const resolvedProfileImage = await getProfileImageOrFallback(
+            authUser.id,
+            user.profileImage,
+          );
+          return { profileImage: resolvedProfileImage };
         } catch (error) {
           fastify.log.error({ err: error }, "Failed to fetch profile picture:");
           reply.code(500);

@@ -1,4 +1,4 @@
-import { mkdir, unlink } from "node:fs/promises";
+import { access, mkdir, unlink } from "node:fs/promises";
 import path from "node:path";
 import sharp from "sharp";
 import { prisma } from "../prisma";
@@ -6,8 +6,10 @@ import { prisma } from "../prisma";
 const MAX_AVATAR_BYTES = 5 * 1024 * 1024;
 const MAX_AVATAR_PIXELS = 16_000_000; // ~16MP safety cap
 const ALLOWED_FORMATS = new Set(["png", "jpeg", "webp", "gif"]);
+export const DEFAULT_AVATAR_URL = "/public/default_avatar.png";
 
 type AvatarUploadErrorStatus = 400 | 413;
+type AvatarUploadValidationFormat = "gif" | "other";
 
 export async function validateAvatarUpload(request: { parts: () => AsyncIterable<unknown> }) {
   let file: {
@@ -67,7 +69,7 @@ export async function validateAvatarUpload(request: { parts: () => AsyncIterable
   return {
     ok: true as const,
     buffer,
-    format,
+    format: format as AvatarUploadValidationFormat,
     animated: isAnimatedGif,
   };
 }
@@ -128,5 +130,26 @@ export async function replaceUserAvatar(
       await unlink(filePath);
     } catch {}
     throw dbError;
+  }
+}
+
+export async function getProfileImageOrFallback(userId: number, profileImage: string) {
+  if (!profileImage.startsWith("/public/")) {
+    return profileImage;
+  }
+
+  const filePath = path.join(process.cwd(), profileImage.slice(1));
+  try {
+    await access(filePath);
+    return profileImage;
+  } catch {
+    try {
+      await prisma.user.update({
+        where: { id: userId },
+        data: { profileImage: DEFAULT_AVATAR_URL },
+        select: { id: true },
+      });
+    } catch {}
+    return DEFAULT_AVATAR_URL;
   }
 }

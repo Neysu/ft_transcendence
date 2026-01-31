@@ -2,9 +2,9 @@
 import type { FastifyInstance } from "fastify";
 import sharp from "sharp";
 import { prisma } from "../prisma";
+import { DEFAULT_AVATAR_URL } from "./avatarUtils";
 import bcrypt from "bcrypt";
 
-const FALLBACK_AVATAR_URL = "/public/default-avatar.png";
 const AVATAR_REQUEST_TIMEOUT_MS = 2500;
 const AVATAR_REQUEST_RETRIES = 1;
 
@@ -56,7 +56,7 @@ export async function createDefaultAvatar(username: string): Promise<string> {
     return `data:image/webp;base64,${base64Image}`;
   } catch (error) {
     console.error("Failed to create default avatar:", error);
-    return (FALLBACK_AVATAR_URL);
+    return (DEFAULT_AVATAR_URL);
   }
 }
 
@@ -70,13 +70,13 @@ export async function registerUser(
       username: data.username,
       email: data.email,
       password: hashed,
-      profileImage: FALLBACK_AVATAR_URL,
+      profileImage: DEFAULT_AVATAR_URL,
     },
   });
 
   void createDefaultAvatar(data.username)
     .then((avatar) => {
-      if (!avatar || avatar === FALLBACK_AVATAR_URL) {
+      if (!avatar || avatar === DEFAULT_AVATAR_URL) {
         return;
       }
       return prisma.user.update({
