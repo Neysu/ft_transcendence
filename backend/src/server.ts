@@ -2,83 +2,37 @@ import "dotenv/config";
 import Fastify from "fastify";
 import cookie from "@fastify/cookie";
 import jwt from "@fastify/jwt";
-import crypto from "crypto";
 import fastifyMultipart from "@fastify/multipart";
 import fastifyStatic from "@fastify/static";
 import swagger from "@fastify/swagger";
 import swaggerUi from "@fastify/swagger-ui";
+import websocket from "@fastify/websocket";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { prisma } from "./lib/prisma";
 import apiRoutes from "./routes/api/index";
-
+import wsRoutes from "./ws";
 
 export async function buildServer() {
-  // --- JWT static secret and expiry ---
+  const fastify = Fastify({ logger: true , trustProxy: true});
+  const __filename = fileURLToPath(import.meta.url);
+  const __dirname = path.dirname(__filename);
   const cookiesSecret = process.env.COOKIES_SECRET;
   const jwtSecret = process.env.JWT_SECRET;
+  if (!process.env.NODE_ENV) {
+    console.warn("NODE_ENV is not set; defaulting to development behavior");
+  }
   if (!cookiesSecret || !jwtSecret) {
     throw new Error("COOKIES_SECRET and JWT_SECRET must be set");
   }
 
-  const fastify = Fastify({ logger: true , trustProxy: true});
-  const __filename = fileURLToPath(import.meta.url);
-  const __dirname = path.dirname(__filename);
-
   fastify.register(cookie, {
     secret: cookiesSecret,
   });
-  // Register JWT with static secret and expiry
+
   fastify.register(jwt, {
     secret: jwtSecret,
-    sign: { expiresIn: "15m" }, // or "30m" for longer sessions
-  });
-
-  // Custom decorator for authentication
-  fastify.decorate("authenticate", async function(request, reply) {
-    try {
-      await request.jwtVerify();
-    } catch (err) {
-      reply.code(401).send({ message: "Invalid or expired token" });
-    }
-  });
-
-  // --- Simple in-memory refresh token store (for demo only) ---
-  const refreshTokens = new Set<string>();
-
-  // Helper to generate a random refresh token
-  function generateRefreshToken() {
-    return crypto.randomBytes(32).toString("hex");
-  }
-
-  // Example: Issue refresh token on login (stub, add to your login route)
-  // const refreshToken = generateRefreshToken();
-  // refreshTokens.add(refreshToken);
-  // reply.setCookie("refreshToken", refreshToken, { httpOnly: true, path: "/" });
-
-  // --- JWT refresh route ---
-  fastify.post("/api/jwt/refresh", async (request, reply) => {
-    // Get refresh token from cookie or body
-    const refreshToken = request.cookies.refreshToken || request.body?.refreshToken;
-    if (!refreshToken || !refreshTokens.has(refreshToken)) {
-      return reply.code(401).send({ error: "Invalid refresh token" });
-    }
-    // Optionally: remove used refresh token for one-time use
-    // refreshTokens.delete(refreshToken);
-    // Issue new access token
-    const payload = { userId: "demo" }; // Replace with real user info
-    const accessToken = await reply.jwtSign(payload, { expiresIn: "15m" });
-    reply.send({ accessToken });
-  });
-
-  // --- JWT logout route ---
-  fastify.post("/api/jwt/logout", async (request, reply) => {
-    const refreshToken = request.cookies.refreshToken || request.body?.refreshToken;
-    if (refreshToken) {
-      refreshTokens.delete(refreshToken);
-      reply.clearCookie("refreshToken", { path: "/" });
-    }
-    reply.send({ success: true });
+    sign: { expiresIn: "15m" },
   });
 
   fastify.register(fastifyMultipart as any, {
@@ -93,9 +47,17 @@ export async function buildServer() {
     prefix: "/public/",
   });
 
-  // fastify.get("/cookies", async (request) => {
-  //   return request.cookies;
-  // });
+  fastify.register(websocket, {
+    options: {
+      handleProtocols: (protocols) => {
+        if (!protocols || protocols.size === 0) {
+          return false;
+        }
+        const protocol = protocols.values().next().value;
+        return protocol ?? false;
+      },
+    },
+  });
 
   await fastify.register(swagger, {
     openapi: {
@@ -123,8 +85,12 @@ export async function buildServer() {
   });
 
   await fastify.register(apiRoutes, { prefix: "/api" });
+  
+  await fastify.register(wsRoutes, { prefix: "/ws" });
+
   return (fastify);
 }
+
 
 export async function start() {
   let server: ReturnType<typeof Fastify> | null = null;
