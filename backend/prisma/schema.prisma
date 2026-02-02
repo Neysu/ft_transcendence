@@ -24,6 +24,37 @@ model User {
   receivedFriendRequests Friendship[] @relation("FriendRequestsReceived")
 }
 
+model Game {
+  id            Int      @id @default(autoincrement())
+  playerOneId   Int
+  playerTwoId   Int
+  playerOneScore Int     @default(0)
+  playerTwoScore Int     @default(0)
+  round         Int      @default(1)
+  status        GameStatus @default(ONGOING)
+  rounds        Round[]
+  createdAt     DateTime @default(now())
+  finishedAt    DateTime?
+}
+
+enum GameStatus {
+  ONGOING
+  FINISHED
+}
+
+model Round {
+  id         Int      @id @default(autoincrement())
+  gameId     Int
+  roundNumber Int
+
+  playerOneMove String?
+  playerTwoMove String?
+
+  winnerId   Int?
+
+  game       Game @relation(fields: [gameId], references: [id])
+}
+
 model Post {
   id        Int      @id @default(autoincrement())
   title     String

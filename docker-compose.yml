@@ -48,7 +48,7 @@ services:
     hostname: ${NGINX_HOST}
     volumes:
       - ./nginx:/etc/nginx/conf.d/:ro
-      - ./certs:/etc/nginx/certs/:ro
+      - nginx-cert:/etc/nginx/certs/
     environment:
       - HTTPS_NGINX
       - NGINX_HOST
@@ -64,3 +64,4 @@ networks:
 volumes:
   sqlite-db:
     driver: local
+  nginx-cert:
