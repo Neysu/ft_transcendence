@@ -3,6 +3,7 @@
 import { useLanguage } from "@/components/LanguageProvider";
 import { ButtonBasic1 } from "@/components/atoms/Button";
 import { ButtonLarge } from "@/components/atoms/ButtonLarge";
+import { useRouter } from "next/navigation";
 
 /**
  * Home Page Component
@@ -12,6 +13,8 @@ import { ButtonLarge } from "@/components/atoms/ButtonLarge";
 export default function Home() {
   // Access translation function from language context
   const { t } = useLanguage();
+  const router = useRouter();
+  
 
   return (
     <>
@@ -20,7 +23,7 @@ export default function Home() {
         {/* Game mode buttons container */}
         <div className="flex flex-col lg:flex-row gap-12 items-center justify-center">
           {/* Play vs Bots button */}
-          <ButtonLarge onClick={() => console.log("Play vs Bots")}>
+          <ButtonLarge onClick={() => router.push("/play-vs-bot")}>
             {t("playVsBots")}
           </ButtonLarge>
 
@@ -31,7 +34,7 @@ export default function Home() {
         </div>
 
         {/* Friends list button centered below */}
-        <ButtonBasic1 onClick={() => console.log("Navigate to friends list")} className="!w-64 !h-20 text-xl">
+        <ButtonBasic1 onClick={() => (router.push("/friends"), console.log("Friends List"))} className="!w-64 !h-20 text-xl">
           {t("friendsList")}
         </ButtonBasic1>
       </main>

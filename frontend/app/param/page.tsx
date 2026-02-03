@@ -6,15 +6,64 @@ import { useLanguage } from "@/components/LanguageProvider";
 import { CardPanel } from "@/components/molecules/CardPanel";
 import { CardPanelSolid } from "@/components/molecules/CardPanelSolid";
 import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
+import Image from "next/image";
 
 export default function ParamPage() {
   const { t } = useLanguage();
   const router = useRouter();
   
-  // TODO: Fetch these values from your backend/auth context
-  const currentEmail = "user@example.com";
-  const currentUsername = "Player42";
-  const profilePictureStatus = "Default";
+  // State for user data - will be fetched from API/database
+  const [currentEmail, setCurrentEmail] = useState<string>("user@example.com");
+  const [currentUsername, setCurrentUsername] = useState<string>("Player42");
+  const [profilePictureUrl, setProfilePictureUrl] = useState<string>("/russian-borzoi-profile-portrait-19997228-removebg-preview.png");
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+
+  // Default fallback image if profile picture fails to load or is not set
+  const DEFAULT_PROFILE_PICTURE = "/russian-borzoi-profile-portrait-19997228-removebg-preview.png";
+  
+  // Fetch user data from backend API/database
+  useEffect(() => {
+    const fetchUserData = async () => {
+      setIsLoading(true);
+      try {
+        // TODO: Replace with your actual API endpoint
+        // const response = await fetch('/api/user/profile', {
+        //   method: 'GET',
+        //   headers: {
+        //     'Content-Type': 'application/json',
+        //     // Add authentication headers if needed
+        //     // 'Authorization': `Bearer ${token}`,
+        //   },
+        // });
+        
+        // if (!response.ok) {
+        //   throw new Error('Failed to fetch user data');
+        // }
+        
+        // const data = await response.json();
+        
+        // Update state with fetched data
+        // setCurrentEmail(data.email || "user@example.com");
+        // setCurrentUsername(data.username || "Player42");
+        // setProfilePictureUrl(data.profilePictureUrl || DEFAULT_PROFILE_PICTURE);
+        
+        // Temporary: Using default values until API is ready
+        setCurrentEmail("user@example.com");
+        setCurrentUsername("Player42");
+        setProfilePictureUrl(DEFAULT_PROFILE_PICTURE);
+        
+      } catch (error) {
+        console.error('Error fetching user data:', error);
+        // Set default values on error
+        setProfilePictureUrl(DEFAULT_PROFILE_PICTURE);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchUserData();
+  }, []);
 
   return (
     <div className="relative min-h-[calc(100vh-160px)]">
@@ -54,9 +103,28 @@ export default function ParamPage() {
                 
                 {/* Profile Picture Row */}
                 <div className="flex items-center justify-between gap-8 p-4 rounded-lg bg-white/20 backdrop-blur-sm border border-white/30">
-                  <div className="flex flex-col gap-1">
-                    <span className="text-xs font-semibold opacity-70 uppercase">Profile Picture</span>
-                    <span className="text-lg font-medium">{profilePictureStatus}</span>
+                  <div className="flex items-center gap-4">
+                    <div className="rounded-full overflow-hidden border-4 border-white bg-white shadow-lg" style={{ width: 64, height: 64 }}>
+                      {isLoading ? (
+                        <div className="w-full h-full bg-gray-300 animate-pulse" />
+                      ) : (
+                        <Image
+                          src={profilePictureUrl}
+                          alt="Profile"
+                          width={64}
+                          height={64}
+                          className="object-cover w-full h-full"
+                          onError={(e) => {
+                            // Fallback to default image if loading fails
+                            const target = e.target as HTMLImageElement;
+                            target.src = DEFAULT_PROFILE_PICTURE;
+                          }}
+                        />
+                      )}
+                    </div>
+                    <div className="flex flex-col gap-1">
+                      <span className="text-xs font-semibold opacity-70 uppercase">{t("profilePicture")}</span>
+                    </div>
                   </div>
                   <ButtonBasic1 className="!w-44 !h-14 flex-shrink-0" onClick={() => router.push("/param/change-profile-picture")}>
                     {t("change")}

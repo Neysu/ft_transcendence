@@ -47,6 +47,7 @@ const translations = {
     changeusername: "Change username",
     changeprofilepicture: "Change profile picture",
     changepassword: "Change password",
+    profilePicture: "Profile Picture",
   },
   fr: {
     welcome: "Bienvenue à ft_transcendence",
@@ -70,6 +71,7 @@ const translations = {
     changeusername: "Changer le nom d'utilisateur",
     changeprofilepicture: "Changer la photo de profil",
     changepassword: "Changer le mot de passe",
+    profilePicture: "Photo de profil",
   },
   es: {
     welcome: "Bienvenido a ft_transcendence",
@@ -93,6 +95,7 @@ const translations = {
     changeusername: "Cambiar nombre de usuario",
     changeprofilepicture: "Cambiar foto de perfil",
     changepassword: "Cambiar contraseña",
+    profilePicture: "Foto de perfil",
   },
 };
 
