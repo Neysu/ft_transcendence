@@ -28,7 +28,7 @@ export default function Home() {
           </ButtonLarge>
 
           {/* Play vs Humans button */}
-          <ButtonLarge onClick={() => console.log("Play vs Humans")}>
+          <ButtonLarge onClick={() => router.push("/play-vs-humans")}>
             {t("playVsHumans")}
           </ButtonLarge>
         </div>
