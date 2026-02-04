@@ -31,6 +31,9 @@ services:
       - NGINX_HOST
       - BACK_HOST
       - BACK_HTTP_PORT
+      - DATABASE_URL
+      - JWT_SECRET
+      - COOKIES_SECRET
     develop:
       watch:
         - path: ./front.Dockerfile

@@ -5,7 +5,6 @@ To run:
 
 First, install NVM if you don’t have it yet:
 ```bash
-
 curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.1/install.sh | bash
 nvm install 22
 nvm use 22

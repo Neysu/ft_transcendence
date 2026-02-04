@@ -7,8 +7,9 @@ RUN bun install
 
 COPY backend/ .
 
+ENV DATABASE_URL="file:./db/database.sqlite"
 EXPOSE 3000
 
-RUN bun prisma migrate dev --schema="./prisma/schema.prisma" --name="test"
+RUN bun prisma migrate deploy --schema="./prisma/schema.prisma"
 RUN bun prisma generate
-CMD ["bun", "run", "index.ts"]
+CMD ["bun", "run", "src/server.ts"]
