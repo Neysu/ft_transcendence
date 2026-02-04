@@ -1,5 +1,6 @@
 import "dotenv/config";
 import Fastify from "fastify";
+import cors from "@fastify/cors";
 import cookie from "@fastify/cookie";
 import jwt from "@fastify/jwt";
 import fastifyMultipart from "@fastify/multipart";
@@ -25,6 +26,13 @@ export async function buildServer() {
   if (!cookiesSecret || !jwtSecret) {
     throw new Error("COOKIES_SECRET and JWT_SECRET must be set");
   }
+
+  fastify.register(cors, {
+    origin: true, // Allow all origins in development
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+  });
 
   fastify.register(cookie, {
     secret: cookiesSecret,

@@ -27,35 +27,40 @@ export default function ParamPage() {
     const fetchUserData = async () => {
       setIsLoading(true);
       try {
-        // TODO: Replace with your actual API endpoint
-        // const response = await fetch('/api/user/profile', {
-        //   method: 'GET',
-        //   headers: {
-        //     'Content-Type': 'application/json',
-        //     // Add authentication headers if needed
-        //     // 'Authorization': `Bearer ${token}`,
-        //   },
-        // });
+        const token = localStorage.getItem("token");
+        if (!token) {
+          router.push("/landing/signin");
+          return;
+        }
         
-        // if (!response.ok) {
-        //   throw new Error('Failed to fetch user data');
-        // }
+        const response = await fetch('http://localhost:3000/api/user/me', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
+        });
         
-        // const data = await response.json();
+        if (!response.ok) {
+          throw new Error('Failed to fetch user data');
+        }
+        
+        const data = await response.json();
         
         // Update state with fetched data
-        // setCurrentEmail(data.email || "user@example.com");
-        // setCurrentUsername(data.username || "Player42");
-        // setProfilePictureUrl(data.profilePictureUrl || DEFAULT_PROFILE_PICTURE);
-        
-        // Temporary: Using default values until API is ready
-        setCurrentEmail("user@example.com");
-        setCurrentUsername("Player42");
-        setProfilePictureUrl(DEFAULT_PROFILE_PICTURE);
+        setCurrentEmail(data.email || "user@example.com");
+        setCurrentUsername(data.username || "Player42");
+        setProfilePictureUrl(data.profileImage || DEFAULT_PROFILE_PICTURE);
         
       } catch (error) {
         console.error('Error fetching user data:', error);
+        if (error instanceof TypeError && error.message.includes("fetch")) {
+          // Server is not reachable
+          console.error("Unable to connect to server");
+        }
         // Set default values on error
+        setCurrentEmail("user@example.com");
+        setCurrentUsername("Player42");
         setProfilePictureUrl(DEFAULT_PROFILE_PICTURE);
       } finally {
         setIsLoading(false);
@@ -63,12 +68,12 @@ export default function ParamPage() {
     };
     
     fetchUserData();
-  }, []);
+  }, [router]);
 
   return (
     <div className="relative min-h-[calc(100vh-160px)]">
       <div className="fixed top-5 left-4 z-50">
-        <ButtonCircleBack onClick={() => router.back()} />
+        <ButtonCircleBack onClick={() => router.push("/")} />
       </div>
       <div className="flex items-center justify-center min-h-[calc(100vh-160px)] px-4">
         <CardPanel className="w-full max-w-6xl h-auto min-h-[55vh] flex !px-6 mx-auto">

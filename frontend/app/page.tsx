@@ -15,6 +15,15 @@ export default function Home() {
   const { t } = useLanguage();
   const router = useRouter();
   
+  const handleLogout = () => {
+    // Clear all authentication data from localStorage
+    localStorage.removeItem("token");
+    localStorage.removeItem("userId");
+    localStorage.removeItem("username");
+    
+    // Redirect to landing page
+    router.push("/landing/signin");
+  };
 
   return (
     <>
@@ -41,7 +50,7 @@ export default function Home() {
 
       {/* Logout button positioned at bottom right */}
       <div className="fixed bottom-8 right-8">
-        <ButtonLarge onClick={() => console.log("Logout")} className="scale-[0.35] origin-bottom-right text-5xl hover:!scale-[0.35]">
+        <ButtonLarge onClick={handleLogout} className="scale-[0.35] origin-bottom-right text-5xl hover:!scale-[0.35]">
           {t("logout")}
         </ButtonLarge>
       </div>

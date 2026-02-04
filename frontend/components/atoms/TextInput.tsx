@@ -8,6 +8,7 @@ export interface TextInputProps {
   onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
   className?: string;
   type?: string;
+  disabled?: boolean;
 }
 
 /**
@@ -20,6 +21,7 @@ export const TextInput: React.FC<TextInputProps> = ({
   onChange,
   className = "",
   type = "text",
+  disabled = false,
 }) => {
   const [theme, setTheme] = React.useState<string>("green");
 
@@ -45,7 +47,8 @@ export const TextInput: React.FC<TextInputProps> = ({
       placeholder={placeholder}
       value={value}
       onChange={onChange}
-      className={`px-4 py-2 rounded-lg border-2 focus:outline-none focus:ring-2 transition-colors ${className}`}
+      disabled={disabled}
+      className={`px-4 py-2 rounded-lg border-2 focus:outline-none focus:ring-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${className}`}
       style={{
         borderColor: borderColor,
         backgroundColor: backgroundColor,

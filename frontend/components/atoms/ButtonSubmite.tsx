@@ -32,7 +32,7 @@ export const ButtonSubmite: React.FC<ButtonSubmiteProps> = ({ className = "", ..
 
   return (
     <button
-      className={`px-8 py-3 font-semibold rounded-lg transition-transform hover:scale-105 active:scale-95 text-white shadow-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black ${className}`}
+      className={`px-8 py-3 font-semibold rounded-lg transition-transform hover:scale-105 active:scale-95 text-white shadow-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 ${className}`}
       style={{ backgroundColor }}
       {...props}
     >

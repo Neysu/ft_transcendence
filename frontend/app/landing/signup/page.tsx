@@ -18,19 +18,106 @@ export default function SignUp() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [error, setError] = useState<string>("");
+  const [isLoading, setIsLoading] = useState<boolean>(false);
 
   // Handle form submission
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError("");
     
-    // Validate password confirmation
-    if (password !== confirmPassword) {
-      alert("Passwords do not match!");
+    // Validation
+    if (!email || !username || !password || !confirmPassword) {
+      setError(t("fillAllFields") || "Please fill all fields");
       return;
     }
     
-    // TODO: Implement registration logic here
-    console.log("Registration attempt:", { email, username, password });
+    // Validate password confirmation
+    if (password !== confirmPassword) {
+      setError(t("passwordsDoNotMatch") || "Passwords do not match");
+      return;
+    }
+    
+    // Password validation
+    if (password.length < 8) {
+      setError(t("passwordTooShort") || "Password must be at least 8 characters");
+      return;
+    }
+    
+    if (!/[A-Z]/.test(password)) {
+      setError(t("passwordNeedsUppercase") || "Password must contain at least one uppercase letter");
+      return;
+    }
+    
+    if (!/[0-9]/.test(password)) {
+      setError(t("passwordNeedsNumber") || "Password must contain at least one number");
+      return;
+    }
+    
+    // Username validation
+    if (username.length < 3 || username.length > 20) {
+      setError(t("invalidUsername") || "Username must be 3-20 characters");
+      return;
+    }
+    
+    setIsLoading(true);
+    
+    try {
+      const response = await fetch("http://localhost:3000/api/user", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email,
+          username,
+          password,
+        }),
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        if (response.status === 409) {
+          throw new Error(t("userExists") || "User already exists with this email or username");
+        }
+        throw new Error(errorData.message || "Registration failed");
+      }
+      
+      // Registration successful - now login
+      const loginResponse = await fetch("http://localhost:3000/api/user/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          username,
+          password,
+        }),
+      });
+      
+      if (!loginResponse.ok) {
+        throw new Error("Registration successful but login failed. Please sign in.");
+      }
+      
+      const loginData = await loginResponse.json();
+      
+      // Store token in localStorage
+      localStorage.setItem("token", loginData.token);
+      localStorage.setItem("userId", loginData.id);
+      localStorage.setItem("username", loginData.username);
+      
+      // Redirect to home page
+      router.push("/");
+    } catch (error) {
+      console.error("Registration error:", error);
+      if (error instanceof TypeError && error.message.includes("fetch")) {
+        setError(t("serverUnavailable") || "Unable to connect to server. Please check if backend is running.");
+      } else {
+        setError(error instanceof Error ? error.message : "Registration failed");
+      }
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -96,8 +183,15 @@ export default function SignUp() {
                 />
               </div>
 
+              {/* Error message */}
+              {error && (
+                <div className="w-full max-w-sm text-red-500 text-sm text-center">
+                  {error}
+                </div>
+              )}
+
               {/* Submit button */}
-              <ButtonSubmite onClick={handleSubmit} className="mt-6" />
+              <ButtonSubmite onClick={handleSubmit} className="mt-6" disabled={isLoading} />
             </form>
           </CardPanelSolid>
         </CardPanel>

@@ -8,7 +8,7 @@ import { TextInput } from "@/components/atoms/TextInput";
 import { CardPanel } from "@/components/molecules/CardPanel";
 import { CardPanelSolid } from "@/components/molecules/CardPanelSolid";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 export default function SignIn() {
   const { t } = useLanguage();
@@ -16,12 +16,73 @@ export default function SignIn() {
   // Form state for username and password
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [error, setError] = useState<string>("");
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [theme, setTheme] = useState<string>("green");
+
+  useEffect(() => {
+    if (typeof document !== "undefined") {
+      setTheme(document.documentElement.getAttribute("data-theme") || "green");
+    }
+    const observer = new MutationObserver(() => {
+      setTheme(document.documentElement.getAttribute("data-theme") || "green");
+    });
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+    return () => observer.disconnect();
+  }, []);
 
   // Handle form submission
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: Implement login logic here
-    console.log("Login attempt:", { username, password });
+    setError("");
+    
+    // Validation
+    if (!username || !password) {
+      setError(t("fillAllFields"));
+      return;
+    }
+    
+    setIsLoading(true);
+    
+    try {
+      const response = await fetch("http://localhost:3000/api/user/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          username,
+          password,
+        }),
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        if (response.status === 401) {
+          throw new Error(t("incorrectCredentials"));
+        }
+        throw new Error(errorData.message || "Login failed");
+      }
+      
+      const data = await response.json();
+      
+      // Store token in localStorage
+      localStorage.setItem("token", data.token);
+      localStorage.setItem("userId", data.id);
+      localStorage.setItem("username", data.username);
+      
+      // Redirect to home page
+      router.push("/");
+    } catch (error) {
+      console.error("Login error:", error);
+      if (error instanceof TypeError && error.message.includes("fetch")) {
+        setError(t("serverUnavailable"));
+      } else {
+        setError(error instanceof Error ? error.message : "Login failed");
+      }
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -60,8 +121,29 @@ export default function SignIn() {
                 />
               </div>
 
+              {/* Error message */}
+              {error && (
+                <div className="w-full max-w-sm px-4 py-3 rounded-lg bg-red-500/10 backdrop-blur-sm border border-red-500/30">
+                  <p className="text-red-600 dark:text-red-400 text-sm text-center font-medium">
+                    {error}
+                  </p>
+                </div>
+              )}
+
               {/* Submit button */}
-              <ButtonSubmite onClick={handleSubmit} className="mt-6" />
+              <ButtonSubmite onClick={handleSubmit} className="mt-6" disabled={isLoading} />
+              
+              {/* Sign up button - same style as submit */}
+              <button
+                type="button"
+                onClick={() => router.push("/landing/signup")}
+                className="px-8 py-3 font-semibold rounded-lg transition-transform hover:scale-105 active:scale-95 text-white shadow-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black mt-4"
+                style={{ 
+                  backgroundColor: theme === 'purple' ? '#9D33FA' : '#9BFA32'
+                }}
+              >
+                {t("signUp") || "Sign Up"}
+              </button>
             </form>
           </CardPanelSolid>
         </CardPanel>

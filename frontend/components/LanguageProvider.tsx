@@ -61,7 +61,11 @@ const translations = {
     rockPaperScissors: "Rock Paper Scissors",
     createRoom: "Create a room",
     joinRoom: "Join a room",
-    makeYourChoice: "Make your choice"
+    makeYourChoice: "Make your choice",
+    incorrectCredentials: "Incorrect username or password. Please check your credentials and try again.",
+    fillAllFields: "Please fill all fields",
+    serverUnavailable: "Unable to connect to server. Please check if backend is running.",
+    currentPasswordIncorrect: "Current password is incorrect"
   },
   fr: {
     welcome: "Bienvenue à ft_transcendence",
@@ -99,7 +103,11 @@ const translations = {
     rockPaperScissors: "Pierre Papier Ciseaux",
     createRoom: "Créer une salle",
     joinRoom: "Rejoindre une salle",
-    makeYourChoice: "Faites votre choix"
+    makeYourChoice: "Faites votre choix",
+    incorrectCredentials: "Nom d'utilisateur ou mot de passe incorrect. Veuillez vérifier vos identifiants et réessayer.",
+    fillAllFields: "Veuillez remplir tous les champs",
+    serverUnavailable: "Impossible de se connecter au serveur. Veuillez vérifier si le backend est en cours d'exécution.",
+    currentPasswordIncorrect: "Le mot de passe actuel est incorrect"
   },
   es: {
     welcome: "Bienvenido a ft_transcendence",
@@ -137,7 +145,11 @@ const translations = {
     rockPaperScissors: "Piedra Papel Tijeras",
     createRoom: "Crear una sala",
     joinRoom: "Unirse a una sala",
-    makeYourChoice: "Haz tu elección"
+    makeYourChoice: "Haz tu elección",
+    incorrectCredentials: "Nombre de usuario o contraseña incorrectos. Por favor, verifica tus credenciales e inténtalo de nuevo.",
+    fillAllFields: "Por favor, rellena todos los campos",
+    serverUnavailable: "No se puede conectar al servidor. Por favor, verifica si el backend está en ejecución.",
+    currentPasswordIncorrect: "La contraseña actual es incorrecta"
   },
 };
 
