@@ -11,8 +11,7 @@ export default function PlayVsHumansPage() {
   const router = useRouter();
 
   const handleCreateRoom = () => {
-    // TODO: Implement room creation logic
-    console.log("Create a room clicked");
+    router.push("/play-vs-humans/create-room");
   };
 
   const handleJoinRoom = () => {

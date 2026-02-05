@@ -6,7 +6,7 @@ export type Choice = "rock" | "paper" | "scissors";
 export interface RPSChoiceProps {
   choice: Choice;
   onClick?: (choice: Choice) => void;
-  size?: number;
+  size?: number | string;
 }
 
 /**

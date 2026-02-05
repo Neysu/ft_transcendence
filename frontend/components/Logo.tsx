@@ -54,7 +54,7 @@ export const Logo = () => {
 
   return (
     <div className="w-full flex justify-center py-6">
-      <div className="relative w-full max-w-4xl h-40 flex items-center justify-center">
+      <div className="relative w-full max-w-4xl h-32 sm:h-40 flex items-center justify-center">
         {/* Tilted ellipse background using SVG for perfect oval */}
         <svg
           className="absolute inset-0 w-full h-full"
@@ -83,15 +83,16 @@ export const Logo = () => {
         </svg>
 
         {/* Text container */}
-        <div className="relative z-10 flex items-center justify-center gap-4">
+        <div className="relative z-10 flex items-center justify-center gap-2 sm:gap-4 px-2">
           {/* Rock */}
           <span
-            className="text-6xl font-black"
+            className="font-black whitespace-nowrap"
             style={{
+              fontSize: "clamp(1.5rem, 6vw, 3.75rem)",
               color: colors.rock.color,
-              textShadow: `3px 3px 0px ${colors.rock.shadow}, 5px 5px 0px rgba(0, 0, 0, 0.2)`,
+              textShadow: `clamp(2px, 0.4vw, 3px) clamp(2px, 0.4vw, 3px) 0px ${colors.rock.shadow}, clamp(3px, 0.6vw, 5px) clamp(3px, 0.6vw, 5px) 0px rgba(0, 0, 0, 0.2)`,
               fontFamily: '"Comic Sans MS", cursive, sans-serif',
-              transform: "translateY(-33px)",
+              transform: "translateY(clamp(-30px, -4vw, -40px))",
             }}
           >
             Rock
@@ -99,12 +100,13 @@ export const Logo = () => {
 
           {/* Paper */}
           <span
-            className="text-6xl font-bold"
+            className="font-bold whitespace-nowrap"
             style={{
+              fontSize: "clamp(1.5rem, 6vw, 3.75rem)",
               color: colors.paper.color,
-              textShadow: `3px 3px 0px ${colors.paper.shadow}, 5px 5px 0px rgba(0, 0, 0, 0.2)`,
+              textShadow: `clamp(2px, 0.4vw, 3px) clamp(2px, 0.4vw, 3px) 0px ${colors.paper.shadow}, clamp(3px, 0.6vw, 5px) clamp(3px, 0.6vw, 5px) 0px rgba(0, 0, 0, 0.2)`,
               fontFamily: '"Georgia", serif',
-			  transform: "translateY(-10px)",
+			  transform: "translateY(clamp(-6px, -1vw, -10px))",
             }}
           >
             Paper
@@ -112,12 +114,13 @@ export const Logo = () => {
 
           {/* Scissors */}
           <span
-            className="text-6xl font-black"
+            className="font-black whitespace-nowrap"
             style={{
+              fontSize: "clamp(1.5rem, 6vw, 3.75rem)",
               color: colors.scissors.color,
-              textShadow: `3px 3px 0px ${colors.scissors.shadow}, 5px 5px 0px rgba(0, 0, 0, 0.2)`,
+              textShadow: `clamp(2px, 0.4vw, 3px) clamp(2px, 0.4vw, 3px) 0px ${colors.scissors.shadow}, clamp(3px, 0.6vw, 5px) clamp(3px, 0.6vw, 5px) 0px rgba(0, 0, 0, 0.2)`,
               fontFamily: '"Arial Black", sans-serif',
-              transform: "translateY(15px)",
+              transform: "translateY(clamp(16px, 2vw, 22px))",
             }}
           >
             Scissors
