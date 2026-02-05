@@ -9,6 +9,8 @@ export interface TextInputProps {
   className?: string;
   type?: string;
   disabled?: boolean;
+  id?: string;
+  maxLength?: number;
 }
 
 /**
@@ -22,6 +24,8 @@ export const TextInput: React.FC<TextInputProps> = ({
   className = "",
   type = "text",
   disabled = false,
+  id,
+  maxLength,
 }) => {
   const [theme, setTheme] = React.useState<string>("green");
 
@@ -43,11 +47,13 @@ export const TextInput: React.FC<TextInputProps> = ({
 
   return (
     <input
+      id={id}
       type={type}
       placeholder={placeholder}
       value={value}
       onChange={onChange}
       disabled={disabled}
+      maxLength={maxLength}
       className={`px-4 py-2 rounded-lg border-2 focus:outline-none focus:ring-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${className}`}
       style={{
         borderColor: borderColor,

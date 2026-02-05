@@ -2,7 +2,7 @@
 import React from "react";
 
 export interface RPSOpponentProps {
-  size?: number;
+  size?: number | string;
   isLoading?: boolean;
   opponentChoice?: "rock" | "paper" | "scissors" | null; // Backend will provide this
 }

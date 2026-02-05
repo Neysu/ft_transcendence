@@ -18,6 +18,8 @@ export default function PlayVsBotPage() {
   const [isWaitingForBot, setIsWaitingForBot] = useState<boolean>(false);
   const [playerScore, setPlayerScore] = useState<number>(0);
   const [opponentScore, setOpponentScore] = useState<number>(0);
+  const choiceSize = "clamp(84px, 20vw, 160px)";
+  const opponentSize = "clamp(96px, 22vw, 180px)";
 
   const handlePlayerChoice = (choice: Choice) => {
     setPlayerChoice(choice);
@@ -50,30 +52,34 @@ export default function PlayVsBotPage() {
         <CardPanel className="w-full max-w-[95vw] h-auto min-h-[70vh] flex !px-3 sm:!px-6 md:!px-12 mx-auto">
           <CardPanelSolid className="flex-1 !w-full !mx-0 h-auto !p-4 sm:!p-6 md:!p-12 flex flex-col items-center justify-between gap-8">
             {/* Page title */}
-            <h1 className="text-2xl sm:text-3xl font-bold text-center">{t("playVsBots")}</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold text-center -mt-2 sm:-mt-3">{t("playVsBots")}</h1>
             
             {/* TOP: Opponent's choice */}
-            <div className="flex flex-col items-center gap-3 -mt-30">
+            <div className="flex flex-col items-center gap-3 -mt-4 sm:-mt-8 md:-mt-10">
               <p className="text-sm text-gray-600 dark:text-gray-300">{t("botChoice")}:</p>
-              <RPSOpponent isLoading={isWaitingForBot} opponentChoice={opponentChoice} />
+              <RPSOpponent
+                size={opponentSize}
+                isLoading={isWaitingForBot}
+                opponentChoice={opponentChoice}
+              />
             </div>
 
             {/* MIDDLE: Score and game info */}
             <div className="flex flex-col items-center gap-4 w-full relative">
               {/* Score Display */}
-              <div className="flex justify-between items-center w-full max-w-md">
+              <div className="flex justify-between items-center w-full max-w-md px-2 sm:px-0">
                 {/* Player Score - Left */}
                 <div className="flex flex-col items-center">
-                  <p className="text-6xl font-bold text-green-600 dark:text-green-400">{playerScore}</p>
+                  <p className="text-4xl sm:text-5xl md:text-6xl font-bold text-green-600 dark:text-green-400">{playerScore}</p>
                   <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{t("you")}</p>
                 </div>
                 
                 {/* VS Separator */}
-                <div className="text-2xl font-bold text-gray-400 dark:text-gray-500">VS</div>
+                <div className="text-xl sm:text-2xl font-bold text-gray-400 dark:text-gray-500">VS</div>
                 
                 {/* Opponent Score - Right */}
                 <div className="flex flex-col items-center">
-                  <p className="text-6xl font-bold text-red-600 dark:text-red-400">{opponentScore}</p>
+                  <p className="text-4xl sm:text-5xl md:text-6xl font-bold text-red-600 dark:text-red-400">{opponentScore}</p>
                   <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{t("bot")}</p>
                 </div>
               </div>
@@ -92,10 +98,10 @@ export default function PlayVsBotPage() {
             {/* BOTTOM: Player's choices */}
             <div className="flex flex-col items-center gap-4 w-full">
               <p className="text-sm text-gray-600 dark:text-gray-300">{t("yourChoice")}:</p>
-              <div className="flex gap-4 justify-center">
-                <RPSChoice choice="rock" onClick={handlePlayerChoice} />
-                <RPSChoice choice="paper" onClick={handlePlayerChoice} />
-                <RPSChoice choice="scissors" onClick={handlePlayerChoice} />
+              <div className="flex flex-wrap gap-3 sm:gap-4 justify-center">
+                <RPSChoice size={choiceSize} choice="rock" onClick={handlePlayerChoice} />
+                <RPSChoice size={choiceSize} choice="paper" onClick={handlePlayerChoice} />
+                <RPSChoice size={choiceSize} choice="scissors" onClick={handlePlayerChoice} />
               </div>
             </div>
 
