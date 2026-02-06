@@ -23,7 +23,7 @@ services:
     ports:
       - 3000:3000
     volumes:
-      - ./backend/db/:/app/data/
+      - ./backend/db/:/app/data/:z
     build:
       context: .
       dockerfile: ./back.Dockerfile
