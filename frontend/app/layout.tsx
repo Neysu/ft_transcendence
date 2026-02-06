@@ -38,6 +38,7 @@ export default function RootLayout({
   const router = useRouter();
   const pathname = usePathname();
   const hideProfileButton = pathname?.startsWith("/landing") || pathname?.startsWith("/extra-info") || pathname?.startsWith("/landing/signin") || pathname?.startsWith("/landing/signup");
+  const hideExtraInfo = pathname?.startsWith("/extra-info") || pathname?.startsWith("/policy");
   return (
     <html lang="en" className={inter.variable} suppressHydrationWarning>
       <head>
@@ -74,7 +75,7 @@ export default function RootLayout({
               )}
             </div>
             {children}
-            <ExtraInfo />
+            {!hideExtraInfo && <ExtraInfo />}
           </LanguageProvider>
         </ThemeSync>
       </body>

@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import Link from "next/link";
 
 export const Logo = () => {
   const [theme, setTheme] = React.useState<string>("green");
@@ -53,8 +54,8 @@ export const Logo = () => {
   };
 
   return (
-    <div className="w-full flex justify-center py-6">
-      <div className="relative w-full max-w-4xl h-32 sm:h-40 flex items-center justify-center">
+    <Link href="/" className="w-full flex justify-center py-3 cursor-pointer">
+      <div className="relative w-full max-w-4xl h-24 sm:h-32 flex items-center justify-center">
         {/* Tilted ellipse background using SVG for perfect oval */}
         <svg
           className="absolute inset-0 w-full h-full"
@@ -88,11 +89,11 @@ export const Logo = () => {
           <span
             className="font-black whitespace-nowrap"
             style={{
-              fontSize: "clamp(1.5rem, 6vw, 3.75rem)",
+              fontSize: "clamp(1.2rem, 5vw, 3rem)",
               color: colors.rock.color,
               textShadow: `clamp(2px, 0.4vw, 3px) clamp(2px, 0.4vw, 3px) 0px ${colors.rock.shadow}, clamp(3px, 0.6vw, 5px) clamp(3px, 0.6vw, 5px) 0px rgba(0, 0, 0, 0.2)`,
               fontFamily: '"Comic Sans MS", cursive, sans-serif',
-              transform: "translateY(clamp(-30px, -4vw, -40px))",
+              transform: "translateY(clamp(-24px, -3vw, -32px))",
             }}
           >
             Rock
@@ -102,11 +103,11 @@ export const Logo = () => {
           <span
             className="font-bold whitespace-nowrap"
             style={{
-              fontSize: "clamp(1.5rem, 6vw, 3.75rem)",
+              fontSize: "clamp(1.2rem, 5vw, 3rem)",
               color: colors.paper.color,
               textShadow: `clamp(2px, 0.4vw, 3px) clamp(2px, 0.4vw, 3px) 0px ${colors.paper.shadow}, clamp(3px, 0.6vw, 5px) clamp(3px, 0.6vw, 5px) 0px rgba(0, 0, 0, 0.2)`,
               fontFamily: '"Georgia", serif',
-			  transform: "translateY(clamp(-6px, -1vw, -10px))",
+              transform: "translateY(clamp(-4px, -0.8vw, -8px))",
             }}
           >
             Paper
@@ -116,17 +117,17 @@ export const Logo = () => {
           <span
             className="font-black whitespace-nowrap"
             style={{
-              fontSize: "clamp(1.5rem, 6vw, 3.75rem)",
+              fontSize: "clamp(1.2rem, 5vw, 3rem)",
               color: colors.scissors.color,
               textShadow: `clamp(2px, 0.4vw, 3px) clamp(2px, 0.4vw, 3px) 0px ${colors.scissors.shadow}, clamp(3px, 0.6vw, 5px) clamp(3px, 0.6vw, 5px) 0px rgba(0, 0, 0, 0.2)`,
               fontFamily: '"Arial Black", sans-serif',
-              transform: "translateY(clamp(16px, 2vw, 22px))",
+              transform: "translateY(clamp(12px, 1.6vw, 18px))",
             }}
           >
             Scissors
           </span>
         </div>
       </div>
-    </div>
+    </Link>
   );
 };

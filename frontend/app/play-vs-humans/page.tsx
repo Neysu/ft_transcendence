@@ -15,8 +15,7 @@ export default function PlayVsHumansPage() {
   };
 
   const handleJoinRoom = () => {
-    // TODO: Implement join room logic
-    console.log("Join a room clicked");
+    router.push("/play-vs-humans/join-room");
   };
 
   return (

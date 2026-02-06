@@ -1,15 +1,15 @@
 "use client";
 
 import { ButtonCircleBack } from "@/components/atoms/ButtonCircleBack";
-import { TextInput } from "@/components/atoms/TextInput";
 import { ButtonSubmite } from "@/components/atoms/ButtonSubmite";
+import { TextInput } from "@/components/atoms/TextInput";
 import { CardPanel } from "@/components/molecules/CardPanel";
 import { CardPanelSolid } from "@/components/molecules/CardPanelSolid";
 import { useLanguage } from "@/components/LanguageProvider";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
-export default function CreateRoomPage() {
+export default function JoinRoomPage() {
   const { t } = useLanguage();
   const router = useRouter();
   const [roomName, setRoomName] = useState<string>("");
@@ -27,7 +27,7 @@ export default function CreateRoomPage() {
 
     try {
       setIsSubmitting(true);
-      const response = await fetch("http://localhost:3000/api/rooms", {
+      const response = await fetch("http://localhost:3000/api/rooms/join", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -36,13 +36,13 @@ export default function CreateRoomPage() {
       });
 
       if (!response.ok) {
-        console.error("Failed to create room:", response.statusText);
+        console.error("Failed to join room:", response.statusText);
         return;
       }
 
       router.push(`/play-vs-humans/${roomPath}`);
     } catch (error) {
-      console.error("Failed to create room:", error);
+      console.error("Failed to join room:", error);
     } finally {
       setIsSubmitting(false);
     }
@@ -61,7 +61,7 @@ export default function CreateRoomPage() {
           <CardPanelSolid className="flex-1 !w-full !mx-0 h-auto !p-12 sm:!p-16 md:!p-20 flex flex-col items-center justify-center gap-12">
             {/* Page title */}
             <h1 className="text-2xl sm:text-3xl font-bold text-center">
-              {t("createRoom")}
+              {t("joinRoom")}
             </h1>
 
             {/* Form */}

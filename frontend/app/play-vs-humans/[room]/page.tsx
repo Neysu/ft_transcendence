@@ -7,15 +7,15 @@ import { CardPanel } from "@/components/molecules/CardPanel";
 import { CardPanelSolid } from "@/components/molecules/CardPanelSolid";
 import { useLanguage } from "@/components/LanguageProvider";
 import { useRouter } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 
-export default function PlayVsBotPage() {
+export default function PlayVsPlayersPage() {
   const { t } = useLanguage();
   const router = useRouter();
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [playerChoice, setPlayerChoice] = useState<Choice | null>(null);
   const [opponentChoice, setOpponentChoice] = useState<Choice | null>(null);
-  const [isWaitingForBot, setIsWaitingForBot] = useState<boolean>(false);
+  const [isWaitingForOpponent, setIsWaitingForOpponent] = useState<boolean>(false);
   const [playerScore, setPlayerScore] = useState<number>(0);
   const [opponentScore, setOpponentScore] = useState<number>(0);
   const choiceSize = "clamp(84px, 20vw, 160px)";
@@ -23,18 +23,18 @@ export default function PlayVsBotPage() {
 
   const handlePlayerChoice = (choice: Choice) => {
     setPlayerChoice(choice);
-    setIsWaitingForBot(true);
-    // TODO: Send choice to backend and receive bot's choice
+    setIsWaitingForOpponent(true);
+    // TODO: Send choice to backend and receive opponent's choice
     // TODO: After backend responds with result, update scores:
     // Example: if player wins -> setPlayerScore(playerScore + 1)
-    //          if bot wins -> setOpponentScore(opponentScore + 1)
+    //          if opponent wins -> setOpponentScore(opponentScore + 1)
     console.log("Player chose:", choice);
   };
 
   const handlePlayAgain = () => {
     setPlayerChoice(null);
     setOpponentChoice(null);
-    setIsWaitingForBot(false);
+    setIsWaitingForOpponent(false);
     // Scores are NOT reset here - they persist across rounds
     // Scores only reset when user leaves the page
     // TODO: Send new round request to backend
@@ -52,14 +52,14 @@ export default function PlayVsBotPage() {
         <CardPanel className="w-full max-w-[95vw] h-auto min-h-[60vh] flex !px-3 sm:!px-6 md:!px-12 mx-auto">
           <CardPanelSolid className="flex-1 !w-full !mx-0 h-auto !p-2 sm:!p-3 md:!p-6 flex flex-col items-center justify-between gap-5">
             {/* Page title */}
-            <h1 className="text-lg sm:text-xl font-bold text-center -mt-1">{t("playVsBots")}</h1>
-            
+            <h1 className="text-lg sm:text-xl font-bold text-center -mt-1">{t("playVsPlayers")}</h1>
+
             {/* TOP: Opponent's choice */}
             <div className="flex flex-col items-center gap-3 -mt-2 sm:-mt-4 md:-mt-6">
-              <p className="text-sm text-gray-600 dark:text-gray-300">{t("botChoice")}:</p>
+              <p className="text-sm text-gray-600 dark:text-gray-300">{t("opponentChoice")}:</p>
               <RPSOpponent
                 size={opponentSize}
-                isLoading={isWaitingForBot}
+                isLoading={isWaitingForOpponent}
                 opponentChoice={opponentChoice}
               />
             </div>
@@ -73,17 +73,17 @@ export default function PlayVsBotPage() {
                   <p className="text-4xl sm:text-5xl md:text-6xl font-bold text-green-600 dark:text-green-400">{playerScore}</p>
                   <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{t("you")}</p>
                 </div>
-                
+
                 {/* VS Separator */}
                 <div className="text-xl sm:text-2xl font-bold text-gray-400 dark:text-gray-500">VS</div>
-                
+
                 {/* Opponent Score - Right */}
                 <div className="flex flex-col items-center">
                   <p className="text-4xl sm:text-5xl md:text-6xl font-bold text-red-600 dark:text-red-400">{opponentScore}</p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{t("bot")}</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{t("opponent")}</p>
                 </div>
               </div>
-              
+
               {/* Play Again Button */}
               <div className="h-10 flex items-center justify-center mt-4">
                 <button
@@ -104,7 +104,6 @@ export default function PlayVsBotPage() {
                 <RPSChoice size={choiceSize} choice="scissors" onClick={handlePlayerChoice} />
               </div>
             </div>
-
           </CardPanelSolid>
         </CardPanel>
       </div>
