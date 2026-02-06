@@ -22,6 +22,8 @@ services:
     image: trans_back
     ports:
       - 3000:3000
+    volumes:
+      - ./backend/db/:/app/data/
     build:
       context: .
       dockerfile: ./back.Dockerfile
