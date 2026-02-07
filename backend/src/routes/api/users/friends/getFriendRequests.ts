@@ -2,6 +2,18 @@ import type { FastifyInstance } from "fastify";
 import { prisma } from "../../../../lib/prisma";
 import { authMiddleware } from "../../../../middleware/auth";
 import { getFriendRequestsSchema } from "../../../../swagger/schemas";
+import { getMutualFriendCountsForUsers } from "../../../../lib/api/friendUtils";
+
+type ReceivedFriendRequestRow = {
+  id: number;
+  status: string;
+  createdAt: Date;
+  requester: {
+    id: number;
+    username: string;
+    profileImage: string | null;
+  };
+};
 
 export async function getFriendRequests(fastify: FastifyInstance) {
   fastify.register(async function (fastify) {
@@ -15,7 +27,7 @@ export async function getFriendRequests(fastify: FastifyInstance) {
             return { status: "error", message: "Missing token" };
           }
 
-          const requests = await prisma.friendship.findMany({
+          const requests: ReceivedFriendRequestRow[] = await prisma.friendship.findMany({
             where: {
               status: "PENDING",
               addresseeId: authUser.id,
@@ -29,11 +41,15 @@ export async function getFriendRequests(fastify: FastifyInstance) {
             orderBy: { createdAt: "desc" },
           });
 
+          const requesterIds = requests.map((request) => request.requester.id);
+          const mutualCounts = await getMutualFriendCountsForUsers(authUser.id, requesterIds);
+
           const mapped = requests.map((request) => ({
             id: request.id,
             status: request.status,
             createdAt: request.createdAt,
             user: request.requester,
+            mutualFriendsCount: mutualCounts[request.requester.id] ?? 0,
           }));
 
           return { requests: mapped };
