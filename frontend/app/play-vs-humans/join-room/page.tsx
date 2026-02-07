@@ -27,7 +27,7 @@ export default function JoinRoomPage() {
 
     try {
       setIsSubmitting(true);
-      const response = await fetch("http://localhost:3000/api/rooms/join", {
+      const response = await fetch("/api/rooms/join", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

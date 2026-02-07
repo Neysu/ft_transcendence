@@ -30,7 +30,7 @@ export default function ChangePasswordPage() {
           return;
         }
         
-        const response = await fetch("http://localhost:3000/api/user/me", {
+        const response = await fetch("/api/user/me", {
           method: "GET",
           headers: {
             "Content-Type": "application/json",
@@ -102,7 +102,7 @@ export default function ChangePasswordPage() {
         return;
       }
       
-      const response = await fetch(`http://localhost:3000/api/user/${userId}/password`, {
+      const response = await fetch(`/api/user/${userId}/password`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",

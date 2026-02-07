@@ -63,7 +63,7 @@ export default function SignUp() {
     setIsLoading(true);
     
     try {
-      const response = await fetch("http://localhost:3000/api/user", {
+      const response = await fetch("/api/user", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -84,7 +84,7 @@ export default function SignUp() {
       }
       
       // Registration successful - now login
-      const loginResponse = await fetch("http://localhost:3000/api/user/login", {
+      const loginResponse = await fetch("/api/user/login", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

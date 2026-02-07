@@ -33,7 +33,7 @@ export default function ParamPage() {
           return;
         }
         
-        const response = await fetch('http://localhost:3000/api/user/me', {
+        const response = await fetch('/api/user/me', {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
