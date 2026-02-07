@@ -364,10 +364,20 @@ export const friendRequestSchema = {
   summary: "Send friend request",
   body: {
     type: "object",
-    required: ["toUserId"],
-    properties: {
-      toUserId: { type: "number", description: "ID du destinataire" },
-    },
+    oneOf: [
+      {
+        required: ["toUserId"],
+        properties: {
+          toUserId: { type: "number", description: "ID du destinataire" },
+        },
+      },
+      {
+        required: ["toUsername"],
+        properties: {
+          toUsername: { type: "string", description: "Username du destinataire" },
+        },
+      },
+    ],
   },
   response: {
     200: {
@@ -462,6 +472,7 @@ const friendRequestItemSchema = {
     id: { type: "number" },
     status: { type: "string" },
     createdAt: { type: "string", format: "date-time" },
+    mutualFriendsCount: { type: "number" },
     user: {
       type: "object",
       properties: {
@@ -634,6 +645,33 @@ export const friendCancelSchema = {
     required: ["toUserId"],
     properties: {
       toUserId: { type: "number", description: "ID du destinataire" },
+    },
+  },
+  response: {
+    200: {
+      type: "object",
+      properties: {
+        status: { type: "string" },
+      },
+      examples: [{ status: "success" }],
+    },
+    400: errorResponseWithIssues,
+    401: errorResponse,
+    404: errorResponse,
+    500: errorResponse,
+  },
+};
+
+export const friendRemoveSchema = {
+  security: authRequired,
+  description: "Retirer un ami (relation acceptee)",
+  tags: ["friends"],
+  summary: "Remove friend",
+  body: {
+    type: "object",
+    required: ["toUserId"],
+    properties: {
+      toUserId: { type: "number", description: "ID de l'ami a retirer" },
     },
   },
   response: {

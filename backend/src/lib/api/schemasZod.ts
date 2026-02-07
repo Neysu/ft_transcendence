@@ -62,6 +62,17 @@ export const FriendRequestSchema = z.object({
   toUserId: z.number().int().positive(),
 });
 
+export const FriendRequestTargetSchema = z.union([
+  z.object({
+    toUserId: z.number().int().positive(),
+    toUsername: z.undefined().optional(),
+  }),
+  z.object({
+    toUserId: z.undefined().optional(),
+    toUsername: z.string().trim().min(1),
+  }),
+]);
+
 export const FriendAcceptSchema = z.object({
   fromUserId: z.number().int().positive(),
 });

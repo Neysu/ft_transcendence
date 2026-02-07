@@ -40,7 +40,6 @@ export async function buildServer() {
 
   fastify.register(jwt, {
     secret: jwtSecret,
-    sign: { expiresIn: "15m" },
   });
 
   fastify.register(fastifyMultipart as any, {
