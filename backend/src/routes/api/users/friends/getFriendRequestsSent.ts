@@ -2,6 +2,7 @@ import type { FastifyInstance } from "fastify";
 import { prisma } from "../../../../lib/prisma";
 import { authMiddleware } from "../../../../middleware/auth";
 import { getFriendRequestsSentSchema } from "../../../../swagger/schemas";
+import { normalizeProfileImageUrl } from "../../../../lib/api/avatarUtils";
 
 export async function getFriendRequestsSent(fastify: FastifyInstance) {
   fastify.register(async function (fastify) {
@@ -29,11 +30,23 @@ export async function getFriendRequestsSent(fastify: FastifyInstance) {
             orderBy: { createdAt: "desc" },
           });
 
-          const mapped = requests.map((request) => ({
+          const mapped = requests.map((request: {
+            id: number;
+            status: string;
+            createdAt: Date;
+            addressee: { id: number; username: string; profileImage: string | null };
+          }) => ({
             id: request.id,
             status: request.status,
             createdAt: request.createdAt,
-            user: request.addressee,
+            user: {
+              ...request.addressee,
+              profileImage: normalizeProfileImageUrl(request.addressee.profileImage, {
+                logger: fastify.log,
+                userId: request.addressee.id,
+                context: "getFriendRequestsSent",
+              }),
+            },
           }));
 
           return { requests: mapped };

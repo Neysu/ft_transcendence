@@ -47,7 +47,6 @@ export async function updateAvatar(fastify: FastifyInstance) {
           user.profileImage,
           validation.buffer,
           validation.format,
-          validation.animated,
         );
 
         return updatedUser;

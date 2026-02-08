@@ -3,6 +3,7 @@ import { prisma } from "../../../../lib/prisma";
 import { authMiddleware } from "../../../../middleware/auth";
 import { getFriendRequestsSchema } from "../../../../swagger/schemas";
 import { getMutualFriendCountsForUsers } from "../../../../lib/api/friendUtils";
+import { normalizeProfileImageUrl } from "../../../../lib/api/avatarUtils";
 
 type ReceivedFriendRequestRow = {
   id: number;
@@ -48,7 +49,14 @@ export async function getFriendRequests(fastify: FastifyInstance) {
             id: request.id,
             status: request.status,
             createdAt: request.createdAt,
-            user: request.requester,
+            user: {
+              ...request.requester,
+              profileImage: normalizeProfileImageUrl(request.requester.profileImage, {
+                logger: fastify.log,
+                userId: request.requester.id,
+                context: "getFriendRequests",
+              }),
+            },
             mutualFriendsCount: mutualCounts[request.requester.id] ?? 0,
           }));
 

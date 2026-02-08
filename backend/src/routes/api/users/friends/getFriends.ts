@@ -2,6 +2,7 @@ import type { FastifyInstance } from "fastify";
 import { prisma } from "../../../../lib/prisma";
 import { authMiddleware } from "../../../../middleware/auth";
 import { getFriendsSchema } from "../../../../swagger/schemas";
+import { normalizeProfileImageUrl } from "../../../../lib/api/avatarUtils";
 
 export async function getFriends(fastify: FastifyInstance) {
   fastify.register(async function (fastify) {
@@ -28,11 +29,20 @@ export async function getFriends(fastify: FastifyInstance) {
             },
           });
 
-          const friends = accepted.map((row) => {
-            if (row.requesterId === authUser.id) {
-              return row.addressee;
-            }
-            return row.requester;
+          const friends = accepted.map((row: {
+            requesterId: number;
+            requester: { id: number; username: string; profileImage: string | null };
+            addressee: { id: number; username: string; profileImage: string | null };
+          }) => {
+            const user = row.requesterId === authUser.id ? row.addressee : row.requester;
+            return {
+              ...user,
+              profileImage: normalizeProfileImageUrl(user.profileImage, {
+                logger: fastify.log,
+                userId: user.id,
+                context: "getFriends",
+              }),
+            };
           });
 
           return { friends };

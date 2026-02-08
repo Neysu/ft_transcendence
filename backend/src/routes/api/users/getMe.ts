@@ -2,6 +2,7 @@ import type { FastifyInstance } from "fastify";
 import { prisma } from "../../../lib/prisma";
 import { authMiddleware } from "../../../middleware/auth";
 import { getMeSchema } from "../../../swagger/schemas";
+import { normalizeProfileImageUrl } from "../../../lib/api/avatarUtils";
 
 export async function getMe(fastify: FastifyInstance) {
   fastify.register(async function (fastify) {
@@ -26,7 +27,14 @@ export async function getMe(fastify: FastifyInstance) {
             return { status: "error", message: "User not found" };
           }
 
-          return user;
+          return {
+            ...user,
+            profileImage: normalizeProfileImageUrl(user.profileImage, {
+              logger: fastify.log,
+              userId: user.id,
+              context: "getMe",
+            }),
+          };
         } catch (error) {
           fastify.log.error({ err: error }, "Failed to fetch current user:");
           reply.code(500);

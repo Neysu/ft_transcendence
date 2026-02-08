@@ -36,7 +36,6 @@ export async function requestFriend(fastify: FastifyInstance) {
                 where: {
                   username: {
                     equals: body.toUsername,
-                    mode: "insensitive",
                   },
                 },
                 select: { id: true },
