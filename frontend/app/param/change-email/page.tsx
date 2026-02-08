@@ -6,58 +6,25 @@ import { TextInput } from "@/components/atoms/TextInput";
 import { CardPanel } from "@/components/molecules/CardPanel";
 import { CardPanelSolid } from "@/components/molecules/CardPanelSolid";
 import { useLanguage } from "@/components/LanguageProvider";
+import { useAuth } from "@/components/AuthProvider";
+import { FetchJsonError, fetchJson } from "@/lib/api";
 import { useRouter } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import { useRequireAuth } from "@/hooks/useRequireAuth";
 
 export default function ChangeEmailPage() {
   const { t } = useLanguage();
+  const { updateMe } = useAuth();
+  const { me } = useRequireAuth();
   const router = useRouter();
   
-  const [currentEmail, setCurrentEmail] = useState<string>("");
   const [newEmail, setNewEmail] = useState<string>("");
   const [confirmEmail, setConfirmEmail] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>("");
-  const [userId, setUserId] = useState<number | null>(null);
   
-  // Fetch current user data
-  useEffect(() => {
-    const fetchUserData = async () => {
-      try {
-        const token = localStorage.getItem("token");
-        if (!token) {
-          router.push("/landing/signin");
-          return;
-        }
-        
-        const response = await fetch("/api/user/me", {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${token}`,
-          },
-        });
-        
-        if (!response.ok) {
-          throw new Error("Failed to fetch user data");
-        }
-        
-        const data = await response.json();
-        setCurrentEmail(data.email || "");
-        setUserId(data.id);
-      } catch (error) {
-        console.error("Error fetching user data:", error);
-        if (error instanceof TypeError && error.message.includes("fetch")) {
-          setError("Unable to connect to server. Please check if backend is running.");
-        } else {
-          setError("Failed to load user data");
-        }
-      }
-    };
-    
-    fetchUserData();
-  }, [router]);
-  
+  const currentEmail = me?.email || "";
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
@@ -88,13 +55,14 @@ export default function ChangeEmailPage() {
     setIsLoading(true);
     
     try {
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem("token") || localStorage.getItem("accessToken");
+      const userId = me?.id;
       if (!token || !userId) {
         router.push("/landing/signin");
         return;
       }
       
-      const response = await fetch(`/api/user/${userId}`, {
+      await fetchJson<{ id: number }>(`/api/user/${userId}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -103,19 +71,17 @@ export default function ChangeEmailPage() {
         body: JSON.stringify({
           email: newEmail,
         }),
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Failed to update email");
-      }
+      }, { defaultMessage: "Failed to update email" });
       
       // Success - redirect back to settings
+      updateMe({ email: newEmail });
       router.push("/param");
     } catch (error) {
       console.error("Error updating email:", error);
       if (error instanceof TypeError && error.message.includes("fetch")) {
         setError(t("serverUnavailable") || "Unable to connect to server. Please check if backend is running.");
+      } else if (error instanceof FetchJsonError) {
+        setError(error.message);
       } else if (error instanceof Error) {
         setError(error.message);
       } else {

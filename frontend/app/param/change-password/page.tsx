@@ -6,11 +6,14 @@ import { TextInput } from "@/components/atoms/TextInput";
 import { CardPanel } from "@/components/molecules/CardPanel";
 import { CardPanelSolid } from "@/components/molecules/CardPanelSolid";
 import { useLanguage } from "@/components/LanguageProvider";
+import { FetchJsonError, fetchJson } from "@/lib/api";
+import { useRequireAuth } from "@/hooks/useRequireAuth";
 import { useRouter } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 
 export default function ChangePasswordPage() {
   const { t } = useLanguage();
+  const { me } = useRequireAuth();
   const router = useRouter();
   
   const [currentPassword, setCurrentPassword] = useState<string>("");
@@ -18,44 +21,6 @@ export default function ChangePasswordPage() {
   const [confirmPassword, setConfirmPassword] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>("");
-  const [userId, setUserId] = useState<number | null>(null);
-  
-  // Fetch current user data
-  useEffect(() => {
-    const fetchUserData = async () => {
-      try {
-        const token = localStorage.getItem("token");
-        if (!token) {
-          router.push("/landing/signin");
-          return;
-        }
-        
-        const response = await fetch("/api/user/me", {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${token}`,
-          },
-        });
-        
-        if (!response.ok) {
-          throw new Error("Failed to fetch user data");
-        }
-        
-        const data = await response.json();
-        setUserId(data.id);
-      } catch (error) {
-        console.error("Error fetching user data:", error);
-        if (error instanceof TypeError && error.message.includes("fetch")) {
-          setError("Unable to connect to server. Please check if backend is running.");
-        } else {
-          setError("Failed to load user data");
-        }
-      }
-    };
-    
-    fetchUserData();
-  }, [router]);
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -96,13 +61,14 @@ export default function ChangePasswordPage() {
     setIsLoading(true);
     
     try {
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem("token") || localStorage.getItem("accessToken");
+      const userId = me?.id;
       if (!token || !userId) {
         router.push("/landing/signin");
         return;
       }
       
-      const response = await fetch(`/api/user/${userId}/password`, {
+      await fetchJson<{ id: number }>(`/api/user/${userId}/password`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -112,15 +78,12 @@ export default function ChangePasswordPage() {
           currentPassword,
           newPassword,
         }),
+      }, {
+        defaultMessage: "Failed to update password",
+        statusMessages: {
+          401: t("currentPasswordIncorrect") || "Current password is incorrect",
+        },
       });
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        if (response.status === 401) {
-          throw new Error(t("currentPasswordIncorrect") || "Current password is incorrect");
-        }
-        throw new Error(errorData.message || "Failed to update password");
-      }
       
       // Success - redirect back to settings
       router.push("/param");
@@ -128,6 +91,8 @@ export default function ChangePasswordPage() {
       console.error("Error updating password:", error);
       if (error instanceof TypeError && error.message.includes("fetch")) {
         setError(t("serverUnavailable") || "Unable to connect to server. Please check if backend is running.");
+      } else if (error instanceof FetchJsonError) {
+        setError(error.message);
       } else if (error instanceof Error) {
         setError(error.message);
       } else {

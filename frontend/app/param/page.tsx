@@ -6,69 +6,19 @@ import { useLanguage } from "@/components/LanguageProvider";
 import { CardPanel } from "@/components/molecules/CardPanel";
 import { CardPanelSolid } from "@/components/molecules/CardPanelSolid";
 import { useRouter } from "next/navigation";
-import { useState, useEffect } from "react";
 import Image from "next/image";
+import { DEFAULT_AVATAR_PATH, resolveAvatarUrl } from "@/lib/avatar";
+import { useRequireAuth } from "@/hooks/useRequireAuth";
 
 export default function ParamPage() {
   const { t } = useLanguage();
+  const { me, isReady } = useRequireAuth();
   const router = useRouter();
-  
-  // State for user data - will be fetched from API/database
-  const [currentEmail, setCurrentEmail] = useState<string>("user@example.com");
-  const [currentUsername, setCurrentUsername] = useState<string>("Player42");
-  const [profilePictureUrl, setProfilePictureUrl] = useState<string>("/russian-borzoi-profile-portrait-19997228-removebg-preview.png");
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const isLoading = !isReady || !me;
 
-  // Default fallback image if profile picture fails to load or is not set
-  const DEFAULT_PROFILE_PICTURE = "/russian-borzoi-profile-portrait-19997228-removebg-preview.png";
-  
-  // Fetch user data from backend API/database
-  useEffect(() => {
-    const fetchUserData = async () => {
-      setIsLoading(true);
-      try {
-        const token = localStorage.getItem("token");
-        if (!token) {
-          router.push("/landing/signin");
-          return;
-        }
-        
-        const response = await fetch('/api/user/me', {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`,
-          },
-        });
-        
-        if (!response.ok) {
-          throw new Error('Failed to fetch user data');
-        }
-        
-        const data = await response.json();
-        
-        // Update state with fetched data
-        setCurrentEmail(data.email || "user@example.com");
-        setCurrentUsername(data.username || "Player42");
-        setProfilePictureUrl(data.profileImage || DEFAULT_PROFILE_PICTURE);
-        
-      } catch (error) {
-        console.error('Error fetching user data:', error);
-        if (error instanceof TypeError && error.message.includes("fetch")) {
-          // Server is not reachable
-          console.error("Unable to connect to server");
-        }
-        // Set default values on error
-        setCurrentEmail("user@example.com");
-        setCurrentUsername("Player42");
-        setProfilePictureUrl(DEFAULT_PROFILE_PICTURE);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    
-    fetchUserData();
-  }, [router]);
+  const currentEmail = me?.email || "user@example.com";
+  const currentUsername = me?.username || "Player42";
+  const profilePictureUrl = resolveAvatarUrl(me?.profileImage || DEFAULT_AVATAR_PATH);
 
   return (
     <div className="relative min-h-[calc(100vh-160px)]">
@@ -118,11 +68,13 @@ export default function ParamPage() {
                           alt="Profile"
                           width={64}
                           height={64}
+                          unoptimized
+                          loader={({ src }) => src}
                           className="object-cover w-full h-full"
                           onError={(e) => {
                             // Fallback to default image if loading fails
                             const target = e.target as HTMLImageElement;
-                            target.src = DEFAULT_PROFILE_PICTURE;
+                            target.src = DEFAULT_AVATAR_PATH;
                           }}
                         />
                       )}

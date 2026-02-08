@@ -5,65 +5,34 @@ import { ButtonSubmite } from "@/components/atoms/ButtonSubmite";
 import { CardPanel } from "@/components/molecules/CardPanel";
 import { CardPanelSolid } from "@/components/molecules/CardPanelSolid";
 import { useLanguage } from "@/components/LanguageProvider";
+import { useAuth } from "@/components/AuthProvider";
+import { FetchJsonError, fetchJson } from "@/lib/api";
 import { useRouter } from "next/navigation";
 import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
+import { DEFAULT_AVATAR_PATH, resolveAvatarUrl } from "@/lib/avatar";
+import { useRequireAuth } from "@/hooks/useRequireAuth";
 
 export default function ChangeProfilePicturePage() {
   const { t } = useLanguage();
+  const { refreshMe, updateMe } = useAuth();
+  const { me, isAuthLoading, isAuthenticated } = useRequireAuth({ refreshIfMissing: false });
   const router = useRouter();
   
-  const [currentProfilePicture, setCurrentProfilePicture] = useState<string>("");
   const [previewImage, setPreviewImage] = useState<string>("");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>("");
-  const [userId, setUserId] = useState<number | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
-  const DEFAULT_PROFILE_PICTURE = "/russian-borzoi-profile-portrait-19997228-removebg-preview.png";
-  
-  // Fetch current user data
   useEffect(() => {
-    const fetchUserData = async () => {
-      try {
-        const token = localStorage.getItem("token");
-        if (!token) {
-          router.push("/landing/signin");
-          return;
-        }
-        
-        const response = await fetch("/api/user/me", {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${token}`,
-          },
-        });
-        
-        if (!response.ok) {
-          throw new Error("Failed to fetch user data");
-        }
-        
-        const data = await response.json();
-        const profilePic = data.profileImage || DEFAULT_PROFILE_PICTURE;
-        setCurrentProfilePicture(profilePic);
-        setPreviewImage(profilePic);
-        setUserId(data.id);
-      } catch (error) {
-        console.error("Error fetching user data:", error);
-        if (error instanceof TypeError && error.message.includes("fetch")) {
-          setError("Unable to connect to server. Please check if backend is running.");
-        } else {
-          setError("Failed to load user data");
-        }
-        setCurrentProfilePicture(DEFAULT_PROFILE_PICTURE);
-        setPreviewImage(DEFAULT_PROFILE_PICTURE);
-      }
-    };
-    
-    fetchUserData();
-  }, [router]);
+    if (isAuthLoading || !isAuthenticated) {
+      return;
+    }
+    if (!selectedFile) {
+      setPreviewImage(resolveAvatarUrl(me?.profileImage || DEFAULT_AVATAR_PATH));
+    }
+  }, [isAuthLoading, isAuthenticated, me, selectedFile]);
   
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -106,7 +75,8 @@ export default function ChangeProfilePicturePage() {
     setIsLoading(true);
     
     try {
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem("token") || localStorage.getItem("accessToken");
+      const userId = me?.id;
       if (!token || !userId) {
         router.push("/landing/signin");
         return;
@@ -116,26 +86,32 @@ export default function ChangeProfilePicturePage() {
       const formData = new FormData();
       formData.append("avatar", selectedFile);
       
-      const response = await fetch(`/api/user/avatar/${userId}`, {
+      const data = await fetchJson<{ profileImage?: string | null }>(`/api/user/avatar/${userId}`, {
         method: "PUT",
         headers: {
           "Authorization": `Bearer ${token}`,
           // Don't set Content-Type - browser will set it with boundary for multipart/form-data
         },
         body: formData,
+      }, {
+        defaultMessage: "Failed to update profile picture",
+        statusMessages: {
+          413: t("fileTooLarge") || "File too large. Maximum size is 5MB",
+        },
       });
       
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Failed to update profile picture");
-      }
-      
       // Success - redirect back to settings
+      if (data?.profileImage) {
+        updateMe({ profileImage: data.profileImage });
+      }
+      await refreshMe();
       router.push("/param");
     } catch (error) {
       console.error("Error updating profile picture:", error);
       if (error instanceof TypeError && error.message.includes("fetch")) {
         setError(t("serverUnavailable") || "Unable to connect to server. Please check if backend is running.");
+      } else if (error instanceof FetchJsonError) {
+        setError(error.message);
       } else if (error instanceof Error) {
         setError(error.message);
       } else {
@@ -165,14 +141,16 @@ export default function ChangeProfilePicturePage() {
               <div className="flex flex-col items-center gap-4">
                 <div className="rounded-full overflow-hidden border-4 border-white bg-white shadow-lg" style={{ width: 160, height: 160 }}>
                   <Image
-                    src={previewImage || DEFAULT_PROFILE_PICTURE}
+                    src={previewImage || DEFAULT_AVATAR_PATH}
                     alt="Profile preview"
                     width={160}
                     height={160}
+                    unoptimized
+                    loader={({ src }) => src}
                     className="object-cover w-full h-full"
                     onError={(e) => {
                       const target = e.target as HTMLImageElement;
-                      target.src = DEFAULT_PROFILE_PICTURE;
+                      target.src = DEFAULT_AVATAR_PATH;
                     }}
                   />
                 </div>
