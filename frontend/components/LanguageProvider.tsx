@@ -198,7 +198,16 @@ const translations = {
     termsGoverningDesc: "These terms and conditions are governed by and construed in accordance with the laws of the jurisdiction in which ft_transcendence operates, and you irrevocably submit to the exclusive jurisdiction of the courts located in that area.",
     termsSection10: "Contact Information",
     termsContactDesc: "If you have any questions about these Terms of Service, please contact us through the support section of the application.",
-    allRightsReserved: "All rights reserved."
+    allRightsReserved: "All rights reserved.",
+    room: "Room",
+    creatingRoom: "Creating room...",
+    joiningRoom: "Joining room...",
+    roomCreatedWaiting: "Room created. Waiting for opponent...",
+    missingRoomCode: "Missing room code",
+    connectionNotReady: "Connection not ready",
+    gameFinished: "Game finished",
+    vs: "VS",
+    validate: "Validate"
   },
   fr: {
     welcome: "Bienvenue à ft_transcendence",
@@ -373,7 +382,16 @@ const translations = {
     termsGoverningDesc: "Ces termes et conditions sont régis par les lois de la juridiction dans laquelle ft_transcendence opère.",
     termsSection10: "Informations de Contact",
     termsContactDesc: "Si vous avez des questions sur ces Conditions de Service, veuillez nous contacter via la section support de l'application.",
-    allRightsReserved: "Tous droits réservés."
+    allRightsReserved: "Tous droits réservés.",
+    room: "Salle",
+    creatingRoom: "Création de la salle...",
+    joiningRoom: "Rejoindre la salle...",
+    roomCreatedWaiting: "Salle créée. En attente de l'adversaire...",
+    missingRoomCode: "Code de salle manquant",
+    connectionNotReady: "Connexion non prête",
+    gameFinished: "Partie terminée",
+    vs: "VS",
+    validate: "Valider"
   },
   es: {
     welcome: "Bienvenido a ft_transcendence",
@@ -548,7 +566,16 @@ const translations = {
     termsGoverningDesc: "Estos términos se rigen por las leyes de la jurisdicción en la que opera ft_transcendence.",
     termsSection10: "Información de Contacto",
     termsContactDesc: "Si tienes preguntas sobre estos Términos de Servicio, contáctanos a través de la sección de soporte de la aplicación.",
-    allRightsReserved: "Todos los derechos reservados."
+    allRightsReserved: "Todos los derechos reservados.",
+    room: "Sala",
+    creatingRoom: "Creando sala...",
+    joiningRoom: "Uniéndose a la sala...",
+    roomCreatedWaiting: "Sala creada. Esperando al oponente...",
+    missingRoomCode: "Código de sala faltante",
+    connectionNotReady: "Conexión no lista",
+    gameFinished: "Juego terminado",
+    vs: "VS",
+    validate: "Validar"
   },
 };
 

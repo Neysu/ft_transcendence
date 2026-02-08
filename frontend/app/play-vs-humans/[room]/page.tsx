@@ -124,15 +124,15 @@ export default function PlayVsPlayersPage() {
   useEffect(() => {
     const token = getToken();
     if (!token) {
-      setRoomError("Missing auth token");
+      setRoomError(t("missingAuthToken"));
       return;
     }
     if (!roomCode) {
-      setRoomError("Missing room code");
+      setRoomError(t("missingRoomCode"));
       return;
     }
 
-    setRoomStatus(mode === "create" ? "Creating room..." : "Joining room...");
+    setRoomStatus(mode === "create" ? t("creatingRoom") : t("joiningRoom"));
     const ws = new WebSocket(getWsUrl(token), token);
     socketRef.current = ws;
 
@@ -163,7 +163,7 @@ export default function PlayVsPlayersPage() {
       }
 
       if (message.type === "roomCreated") {
-        setRoomStatus("Room created. Waiting for opponent...");
+        setRoomStatus(t("roomCreatedWaiting"));
         setRoomError("");
         return;
       }
@@ -225,7 +225,7 @@ export default function PlayVsPlayersPage() {
       return;
     }
     if (socketRef.current?.readyState !== WebSocket.OPEN) {
-      setRoomError("Connection not ready");
+      setRoomError(t("connectionNotReady"));
       return;
     }
     const move =
@@ -262,7 +262,7 @@ export default function PlayVsPlayersPage() {
             <div className="flex flex-col items-center gap-1 -mt-1">
               <h1 className="text-lg sm:text-xl font-bold text-center">{t("playVsPlayers")}</h1>
               <p className="text-xs text-gray-500 dark:text-gray-400">
-                Room: {roomCode}
+                {t("room")}: {roomCode}
               </p>
               {roomStatus ? (
                 <p className="text-xs text-gray-500 dark:text-gray-400">{roomStatus}</p>
@@ -271,7 +271,7 @@ export default function PlayVsPlayersPage() {
                 <p className="text-xs text-red-500">{roomError}</p>
               ) : null}
               {gameStatus === "FINISHED" ? (
-                <p className="text-xs text-green-600 dark:text-green-400">Game finished</p>
+                <p className="text-xs text-green-600 dark:text-green-400">{t("gameFinished")}</p>
               ) : null}
             </div>
 
@@ -296,7 +296,7 @@ export default function PlayVsPlayersPage() {
                 </div>
 
                 {/* VS Separator */}
-                <div className="text-xl sm:text-2xl font-bold text-gray-400 dark:text-gray-500">VS</div>
+                <div className="text-xl sm:text-2xl font-bold text-gray-400 dark:text-gray-500">{t("vs")}</div>
 
                 {/* Opponent Score - Right */}
                 <div className="flex flex-col items-center">
@@ -313,7 +313,7 @@ export default function PlayVsPlayersPage() {
                     pendingChoice && !playerChoice ? "opacity-100" : "opacity-0 pointer-events-none"
                   }`}
                 >
-                  Validate
+                  {t("validate")}
                 </button>
                 <button
                   onClick={handlePlayAgain}
