@@ -6,6 +6,8 @@ import { ButtonSubmite } from "@/components/atoms/ButtonSubmite";
 import { TextInput } from "@/components/atoms/TextInput";
 import { CardPanel } from "@/components/molecules/CardPanel";
 import { CardPanelSolid } from "@/components/molecules/CardPanelSolid";
+import { AUTH_CHANGED_EVENT } from "@/components/AuthProvider";
+import { FetchJsonError, fetchJson } from "@/lib/api";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
@@ -63,7 +65,7 @@ export default function SignUp() {
     setIsLoading(true);
     
     try {
-      const response = await fetch("/api/user", {
+      await fetchJson<{ id: number }>("/api/user", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -73,18 +75,15 @@ export default function SignUp() {
           username,
           password,
         }),
+      }, {
+        defaultMessage: "Registration failed",
+        statusMessages: { 409: t("userExists") || "User already exists with this email or username" },
       });
       
-      if (!response.ok) {
-        const errorData = await response.json();
-        if (response.status === 409) {
-          throw new Error(t("userExists") || "User already exists with this email or username");
-        }
-        throw new Error(errorData.message || "Registration failed");
-      }
-      
       // Registration successful - now login
-      const loginResponse = await fetch("/api/user/login", {
+      const loginData = await fetchJson<{ token: string; id: number; username: string }>(
+        "/api/user/login",
+        {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -93,18 +92,15 @@ export default function SignUp() {
           username,
           password,
         }),
-      });
-      
-      if (!loginResponse.ok) {
-        throw new Error("Registration successful but login failed. Please sign in.");
-      }
-      
-      const loginData = await loginResponse.json();
+        },
+        { defaultMessage: "Registration successful but login failed. Please sign in." },
+      );
       
       // Store token in localStorage
       localStorage.setItem("token", loginData.token);
-      localStorage.setItem("userId", loginData.id);
+      localStorage.setItem("userId", String(loginData.id));
       localStorage.setItem("username", loginData.username);
+      window.dispatchEvent(new Event(AUTH_CHANGED_EVENT));
       
       // Redirect to home page
       router.push("/");
@@ -112,6 +108,8 @@ export default function SignUp() {
       console.error("Registration error:", error);
       if (error instanceof TypeError && error.message.includes("fetch")) {
         setError(t("serverUnavailable") || "Unable to connect to server. Please check if backend is running.");
+      } else if (error instanceof FetchJsonError) {
+        setError(error.message);
       } else {
         setError(error instanceof Error ? error.message : "Registration failed");
       }

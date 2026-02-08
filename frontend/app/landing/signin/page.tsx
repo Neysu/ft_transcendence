@@ -7,6 +7,8 @@ import { ButtonSubmite } from "@/components/atoms/ButtonSubmite";
 import { TextInput } from "@/components/atoms/TextInput";
 import { CardPanel } from "@/components/molecules/CardPanel";
 import { CardPanelSolid } from "@/components/molecules/CardPanelSolid";
+import { AUTH_CHANGED_EVENT } from "@/components/AuthProvider";
+import { FetchJsonError, fetchJson } from "@/lib/api";
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 
@@ -45,7 +47,9 @@ export default function SignIn() {
     setIsLoading(true);
     
     try {
-      const response = await fetch("/api/user/login", {
+      const data = await fetchJson<{ token: string; id: number; username: string }>(
+        "/api/user/login",
+        {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -54,22 +58,18 @@ export default function SignIn() {
           username,
           password,
         }),
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        if (response.status === 401) {
-          throw new Error(t("incorrectCredentials"));
-        }
-        throw new Error(errorData.message || "Login failed");
-      }
-      
-      const data = await response.json();
+        },
+        {
+          defaultMessage: "Login failed",
+          statusMessages: { 401: t("incorrectCredentials") },
+        },
+      );
       
       // Store token in localStorage
       localStorage.setItem("token", data.token);
-      localStorage.setItem("userId", data.id);
+      localStorage.setItem("userId", String(data.id));
       localStorage.setItem("username", data.username);
+      window.dispatchEvent(new Event(AUTH_CHANGED_EVENT));
       
       // Redirect to home page
       router.push("/");
@@ -77,6 +77,8 @@ export default function SignIn() {
       console.error("Login error:", error);
       if (error instanceof TypeError && error.message.includes("fetch")) {
         setError(t("serverUnavailable"));
+      } else if (error instanceof FetchJsonError) {
+        setError(error.message);
       } else {
         setError(error instanceof Error ? error.message : "Login failed");
       }

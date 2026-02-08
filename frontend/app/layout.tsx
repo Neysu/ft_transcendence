@@ -5,6 +5,7 @@ import "./globals.css";
 // import "./bg-random.js";
 import { Geist, Geist_Mono, Inter } from "next/font/google";
 import { LanguageProvider } from "@/components/LanguageProvider";
+import { AuthProvider } from "@/components/AuthProvider";
 import { ThemeSync } from "@/components/ThemeSync";
 import ThemeToggle from "@/components/ThemeToggle";
 import LanguageToggle from "@/components/LanguageToggle";
@@ -62,21 +63,23 @@ export default function RootLayout({
         {/* Optional: background div for custom backgrounds */}
         {/* <div className="fixed inset-0 z-0 bg-gradient-to-br from-gray-900 to-gray-700 opacity-60 pointer-events-none" /> */}
         <ThemeSync>
-          <LanguageProvider>
-            <Logo />
-            {/* Fixed position toggles at top right */}
-            <div style={{ position: "fixed", top: 15, right: 16, zIndex: 50, display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 12 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                <ThemeToggle />
-                <LanguageToggle />
+          <AuthProvider>
+            <LanguageProvider>
+              <Logo />
+              {/* Fixed position toggles at top right */}
+              <div style={{ position: "fixed", top: 15, right: 16, zIndex: 50, display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 12 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                  <ThemeToggle />
+                  <LanguageToggle />
+                </div>
+                {!hideProfileButton && (
+                  <ProfilePicButton onClick={() => router.push("/param")} />
+                )}
               </div>
-              {!hideProfileButton && (
-                <ProfilePicButton onClick={() => router.push("/param")} />
-              )}
-            </div>
-            {children}
-            {!hideExtraInfo && <ExtraInfo />}
-          </LanguageProvider>
+              {children}
+              {!hideExtraInfo && <ExtraInfo />}
+            </LanguageProvider>
+          </AuthProvider>
         </ThemeSync>
       </body>
     </html>

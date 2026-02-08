@@ -1,6 +1,7 @@
 "use client";
 
 import { useLanguage } from "@/components/LanguageProvider";
+import { useAuth } from "@/components/AuthProvider";
 import { ButtonBasic1 } from "@/components/atoms/Button";
 import { ButtonLarge } from "@/components/atoms/ButtonLarge";
 import { useRouter } from "next/navigation";
@@ -13,14 +14,11 @@ import { useRouter } from "next/navigation";
 export default function Home() {
   // Access translation function from language context
   const { t } = useLanguage();
+  const { logout } = useAuth();
   const router = useRouter();
   
   const handleLogout = () => {
-    // Clear all authentication data from localStorage
-    localStorage.removeItem("token");
-    localStorage.removeItem("userId");
-    localStorage.removeItem("username");
-    
+    logout();
     // Redirect to landing page
     router.push("/landing/signin");
   };
