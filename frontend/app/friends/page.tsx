@@ -9,6 +9,7 @@ import { CardPanel } from "@/components/molecules/CardPanel";
 import { CardPanelSolid } from "@/components/molecules/CardPanelSolid";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import { DEFAULT_AVATAR_PATH, resolveAvatarUrl } from "@/lib/avatar";
 
 type FriendStatus = "online" | "in-game" | "offline";
 
@@ -26,9 +27,6 @@ type FriendRequest = {
   name: string;
   mutuals: number;
 };
-
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3000";
-const DEFAULT_AVATAR_PATH = "/public/default_avatar.png";
 
 export default function FriendsPage() {
   const router = useRouter();
@@ -78,25 +76,9 @@ export default function FriendsPage() {
     return "bg-red-500";
   };
 
-  const resolveAvatarUrl = (profileImage?: string) => {
-    const source = profileImage || DEFAULT_AVATAR_PATH;
-    if (
-      source.startsWith("http://") ||
-      source.startsWith("https://") ||
-      source.startsWith("data:") ||
-      source.startsWith("blob:")
-    ) {
-      return source;
-    }
-    if (source.startsWith("/")) {
-      return `${API_BASE}${source}`;
-    }
-    return `${API_BASE}/${source}`;
-  };
-
   const getAvatarSrc = (friend: Friend) => {
     if (brokenAvatarIds[friend.id]) {
-      return `${API_BASE}${DEFAULT_AVATAR_PATH}`;
+      return DEFAULT_AVATAR_PATH;
     }
     return resolveAvatarUrl(friend.profileImage);
   };
@@ -132,7 +114,7 @@ export default function FriendsPage() {
     setFriendsLoading(true);
     setFriendsError(null);
     try {
-      const response = await fetch(`${API_BASE}/api/user/friends`, {
+      const response = await fetch(`/api/user/friends`, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
@@ -174,7 +156,7 @@ export default function FriendsPage() {
     setRequestsLoading(true);
     setRequestsError(null);
     try {
-      const response = await fetch(`${API_BASE}/api/user/friends/requests`, {
+      const response = await fetch(`/api/user/friends/requests`, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
@@ -257,7 +239,7 @@ export default function FriendsPage() {
           ? { toUserId: numericId }
           : { toUsername: trimmed };
 
-      const response = await fetch(`${API_BASE}/api/user/friends/request`, {
+      const response = await fetch(`/api/user/friends/request`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -298,7 +280,7 @@ export default function FriendsPage() {
 
     setRequestsActionLoading(fromUserId);
     try {
-      const response = await fetch(`${API_BASE}/api/user/friends/accept`, {
+      const response = await fetch(`/api/user/friends/accept`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -332,7 +314,7 @@ export default function FriendsPage() {
 
     setRequestsActionLoading(fromUserId);
     try {
-      const response = await fetch(`${API_BASE}/api/user/friends/reject`, {
+      const response = await fetch(`/api/user/friends/reject`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -372,7 +354,7 @@ export default function FriendsPage() {
 
     setFriendActionLoading(friendId);
     try {
-      const response = await fetch(`${API_BASE}/api/user/friends/remove`, {
+      const response = await fetch(`/api/user/friends/remove`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

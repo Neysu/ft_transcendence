@@ -1,6 +1,8 @@
 "use client";
-import React from "react";
+import React, { useEffect, useState } from "react";
 import Image from "next/image";
+import { useAuth } from "@/components/AuthProvider";
+import { DEFAULT_AVATAR_PATH, resolveAvatarUrl } from "@/lib/avatar";
 
 export interface ProfilePicButtonProps {
   imageUrl?: string;
@@ -14,10 +16,18 @@ export interface ProfilePicButtonProps {
  * Navigates to settings/param page on click.
  */
 export const ProfilePicButton: React.FC<ProfilePicButtonProps> = ({ 
-  imageUrl = "/russian-borzoi-profile-portrait-19997228-removebg-preview.png", 
+  imageUrl = DEFAULT_AVATAR_PATH, 
   onClick, 
   size = 64 
 }) => {
+  const { profileImage } = useAuth();
+  const resolvedImage = resolveAvatarUrl(profileImage || imageUrl);
+  const [currentImage, setCurrentImage] = useState(resolvedImage);
+
+  useEffect(() => {
+    setCurrentImage(resolvedImage);
+  }, [resolvedImage]);
+
   return (
     <button
       onClick={onClick}
@@ -25,11 +35,18 @@ export const ProfilePicButton: React.FC<ProfilePicButtonProps> = ({
       style={{ width: size, height: size }}
     >
       <Image
-        src={imageUrl}
+        src={currentImage}
         alt="Profile"
         width={size}
         height={size}
+        unoptimized
+        loader={({ src }) => src}
         className="object-cover w-full h-full"
+        onError={() => {
+          if (currentImage !== DEFAULT_AVATAR_PATH) {
+            setCurrentImage(DEFAULT_AVATAR_PATH);
+          }
+        }}
       />
     </button>
   );
