@@ -23,26 +23,12 @@ export default function CreateRoomPage() {
       return;
     }
 
-    const roomPath = encodeURIComponent(trimmedRoomName);
+    const normalizedRoomCode = trimmedRoomName.toLowerCase().replace(/\s+/g, "-");
+    const roomPath = encodeURIComponent(normalizedRoomCode);
 
     try {
       setIsSubmitting(true);
-      const response = await fetch("/api/rooms", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ name: trimmedRoomName, path: roomPath }),
-      });
-
-      if (!response.ok) {
-        console.error("Failed to create room:", response.statusText);
-        return;
-      }
-
-      router.push(`/play-vs-humans/${roomPath}`);
-    } catch (error) {
-      console.error("Failed to create room:", error);
+      router.push(`/play-vs-humans/${roomPath}?mode=create`);
     } finally {
       setIsSubmitting(false);
     }

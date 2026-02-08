@@ -7,10 +7,14 @@ import { attachHeartbeat } from "./utils";
 type ClientMessage =
   | { type: "create"; opponentId: number }
   | { type: "join"; gameId: number }
-  | { type: "move"; gameId: number; move: Move };
+  | { type: "move"; gameId: number; move: Move }
+  | { type: "createRoom"; roomCode: string }
+  | { type: "joinRoom"; roomCode: string };
 
 type ServerMessage =
   | { type: "registered"; userId: number }
+  | { type: "roomCreated"; roomCode: string }
+  | { type: "roomJoined"; roomCode: string; game: GameState; round: RoundState }
   | { type: "gameCreated"; game: GameState; round: RoundState }
   | { type: "gameState"; game: GameState; round: RoundState }
   | { type: "moveAccepted"; gameId: number; roundId: number }
@@ -38,7 +42,15 @@ type RoundState = {
   winnerId: number | null;
 };
 
+type RoomEntry = {
+  code: string;
+  hostUserId: number;
+  createdAt: number;
+};
+
 const connectionsByUserId = new Map<number, Set<WebSocket>>();
+const roomsByCode = new Map<string, RoomEntry>();
+const roomCodeByHost = new Map<number, string>();
 
 function addConnection(userId: number, socket: WebSocket) {
   let sockets = connectionsByUserId.get(userId);
@@ -50,13 +62,15 @@ function addConnection(userId: number, socket: WebSocket) {
 }
 
 function removeConnection(userId: number | null, socket: WebSocket) {
-  if (userId === null) return;
+  if (userId === null) return 0;
   const sockets = connectionsByUserId.get(userId);
-  if (!sockets) return;
+  if (!sockets) return 0;
   sockets.delete(socket);
   if (sockets.size === 0) {
     connectionsByUserId.delete(userId);
+    return 0;
   }
+  return sockets.size;
 }
 
 function safeSend(socket: WebSocket, payload: ServerMessage) {
@@ -85,17 +99,23 @@ function getTokenFromRequest(request: FastifyRequest) {
       return token;
     }
   }
-  if (process.env.NODE_ENV !== "production") {
-    const query = request.query as { token?: string } | undefined;
-    if (query?.token) {
-      return query.token;
-    }
+  const query = request.query as { token?: string } | undefined;
+  if (query?.token) {
+    return query.token;
   }
   return null;
 }
 
 function isMove(value: unknown): value is Move {
   return value === "ROCK" || value === "PAPER" || value === "SCISSORS";
+}
+
+function normalizeRoomCode(value: string) {
+  return value.trim().toLowerCase().replace(/\s+/g, "-");
+}
+
+function isValidRoomCode(value: string) {
+  return value.length >= 3 && value.length <= 15;
 }
 
 function normalizeMove(value: string | null): Move | null {
@@ -198,6 +218,104 @@ export async function gameWs(fastify: FastifyInstance) {
 
       if (!currentUserId) {
         return safeSend(socket, { type: "error", message: "Not registered" });
+      }
+
+      if (payload.type === "createRoom") {
+        if (typeof payload.roomCode !== "string") {
+          return safeSend(socket, { type: "error", message: "Invalid room code" });
+        }
+        const roomCode = normalizeRoomCode(payload.roomCode);
+        if (!isValidRoomCode(roomCode)) {
+          return safeSend(socket, { type: "error", message: "Room code must be 3-15 characters" });
+        }
+        if (roomsByCode.has(roomCode)) {
+          return safeSend(socket, { type: "error", message: "Room already exists" });
+        }
+        if (roomCodeByHost.has(currentUserId)) {
+          return safeSend(socket, { type: "error", message: "You already created a room" });
+        }
+        roomsByCode.set(roomCode, {
+          code: roomCode,
+          hostUserId: currentUserId,
+          createdAt: Date.now(),
+        });
+        roomCodeByHost.set(currentUserId, roomCode);
+        safeSend(socket, { type: "roomCreated", roomCode });
+        return;
+      }
+
+      if (payload.type === "joinRoom") {
+        if (typeof payload.roomCode !== "string") {
+          return safeSend(socket, { type: "error", message: "Invalid room code" });
+        }
+        const roomCode = normalizeRoomCode(payload.roomCode);
+        if (!isValidRoomCode(roomCode)) {
+          return safeSend(socket, { type: "error", message: "Room code must be 3-15 characters" });
+        }
+        const room = roomsByCode.get(roomCode);
+        if (!room) {
+          return safeSend(socket, { type: "error", message: "Room not found" });
+        }
+        if (room.hostUserId === currentUserId) {
+          return safeSend(socket, { type: "error", message: "You are already hosting this room" });
+        }
+        const hostSockets = connectionsByUserId.get(room.hostUserId);
+        if (!hostSockets || hostSockets.size === 0) {
+          roomsByCode.delete(roomCode);
+          roomCodeByHost.delete(room.hostUserId);
+          return safeSend(socket, { type: "error", message: "Host is not connected" });
+        }
+
+        try {
+          const created = await prisma.$transaction(async (tx) => {
+            const game = await tx.game.create({
+              data: {
+                playerOneId: room.hostUserId,
+                playerTwoId: currentUserId,
+              },
+              select: {
+                id: true,
+                playerOneId: true,
+                playerTwoId: true,
+                playerOneScore: true,
+                playerTwoScore: true,
+                round: true,
+                status: true,
+                finishedAt: true,
+              },
+            });
+            const round = await tx.round.create({
+              data: { gameId: game.id, roundNumber: 1 },
+              select: {
+                id: true,
+                roundNumber: true,
+                playerOneMove: true,
+                playerTwoMove: true,
+                winnerId: true,
+              },
+            });
+            return { game, round };
+          });
+
+          roomsByCode.delete(roomCode);
+          roomCodeByHost.delete(room.hostUserId);
+
+          const gameState = toGameState(created.game);
+          const roundState = toRoundState(created.round);
+          const message: ServerMessage = {
+            type: "roomJoined",
+            roomCode,
+            game: gameState,
+            round: roundState,
+          };
+          sendToUser(room.hostUserId, message);
+          sendToUser(currentUserId, message);
+          return;
+        } catch (error) {
+          fastify.log.error({ err: error }, "Failed to create game for room");
+          const detail = error instanceof Error ? error.message : "Failed to create game";
+          return safeSend(socket, { type: "error", message: detail });
+        }
       }
 
       if (payload.type === "create") {
@@ -525,7 +643,14 @@ export async function gameWs(fastify: FastifyInstance) {
     });
 
     socket.on("close", () => {
-      removeConnection(currentUserId, socket);
+      const remaining = removeConnection(currentUserId, socket);
+      if (currentUserId && remaining === 0) {
+        const roomCode = roomCodeByHost.get(currentUserId);
+        if (roomCode) {
+          roomsByCode.delete(roomCode);
+          roomCodeByHost.delete(currentUserId);
+        }
+      }
     });
   });
 }

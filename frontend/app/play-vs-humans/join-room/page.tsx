@@ -23,26 +23,12 @@ export default function JoinRoomPage() {
       return;
     }
 
-    const roomPath = encodeURIComponent(trimmedRoomName);
+    const normalizedRoomCode = trimmedRoomName.toLowerCase().replace(/\s+/g, "-");
+    const roomPath = encodeURIComponent(normalizedRoomCode);
 
     try {
       setIsSubmitting(true);
-      const response = await fetch("/api/rooms/join", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ name: trimmedRoomName, path: roomPath }),
-      });
-
-      if (!response.ok) {
-        console.error("Failed to join room:", response.statusText);
-        return;
-      }
-
-      router.push(`/play-vs-humans/${roomPath}`);
-    } catch (error) {
-      console.error("Failed to join room:", error);
+      router.push(`/play-vs-humans/${roomPath}?mode=join`);
     } finally {
       setIsSubmitting(false);
     }
