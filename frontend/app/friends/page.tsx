@@ -10,6 +10,13 @@ import { CardPanelSolid } from "@/components/molecules/CardPanelSolid";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { DEFAULT_AVATAR_PATH, resolveAvatarUrl } from "@/lib/avatar";
+import {
+  PRESENCE_MESSAGE_EVENT,
+  PRESENCE_WATCH_EVENT,
+  type PresenceSnapshot,
+  type PresenceWatchPayload,
+  type PresenceWsMessage,
+} from "@/lib/presenceEvents";
 
 type FriendStatus = "online" | "in-game" | "offline";
 
@@ -27,6 +34,13 @@ type FriendRequest = {
   name: string;
   mutuals: number;
 };
+
+function formatLastSeen(value: string | null) {
+  if (!value) return undefined;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return undefined;
+  return date.toLocaleString();
+}
 
 export default function FriendsPage() {
   const router = useRouter();
@@ -46,6 +60,8 @@ export default function FriendsPage() {
   const [requestsActionLoading, setRequestsActionLoading] = useState<number | null>(null);
   const [friendActionLoading, setFriendActionLoading] = useState<string | null>(null);
   const [brokenAvatarIds, setBrokenAvatarIds] = useState<Record<string, boolean>>({});
+  const friendSkeletonRows = [1, 2, 3];
+  const requestSkeletonRows = [1, 2];
 
   const getToken = () =>
     typeof window !== "undefined"
@@ -135,14 +151,20 @@ export default function FriendsPage() {
         return;
       }
 
-      const mapped = (payload?.friends || []).map((friend) => ({
-        id: String(friend.id),
-        name: friend.username,
-        status: "offline" as const,
-        profileImage: friend.profileImage || undefined,
-      }));
-
-      setFriends(mapped);
+      setFriends((previous) => {
+        const previousById = new Map(previous.map((friend) => [friend.id, friend]));
+        return (payload?.friends || []).map((friend) => {
+          const id = String(friend.id);
+          const existing = previousById.get(id);
+          return {
+            id,
+            name: friend.username,
+            status: existing?.status ?? ("offline" as const),
+            lastSeen: existing?.lastSeen,
+            profileImage: friend.profileImage || undefined,
+          };
+        });
+      });
     } catch (error) {
       console.error(error);
       setFriendsError(t("failedLoadFriends"));
@@ -217,6 +239,71 @@ export default function FriendsPage() {
   useEffect(() => {
     void refreshFriendsData();
   }, [refreshFriendsData]);
+
+  const friendIdsForPresence = useMemo(
+    () =>
+      friends
+        .map((friend) => Number(friend.id))
+        .filter((id) => Number.isInteger(id) && id > 0),
+    [friends]
+  );
+  const friendIdsKey = useMemo(
+    () => friendIdsForPresence.join(","),
+    [friendIdsForPresence]
+  );
+
+  useEffect(() => {
+    const applyPresenceSnapshot = (users: PresenceSnapshot[]) => {
+      const byId = new Map(users.map((entry) => [String(entry.userId), entry]));
+      setFriends((previous) => {
+        let changed = false;
+        const next = previous.map((friend) => {
+          const presence = byId.get(friend.id);
+          if (!presence) return friend;
+          const lastSeen = formatLastSeen(presence.lastSeen);
+          if (friend.status === presence.status && friend.lastSeen === lastSeen) {
+            return friend;
+          }
+          changed = true;
+          return {
+            ...friend,
+            status: presence.status,
+            lastSeen,
+          };
+        });
+        return changed ? next : previous;
+      });
+    };
+
+    const handlePresenceMessage = (event: Event) => {
+      const customEvent = event as CustomEvent<PresenceWsMessage>;
+      const message = customEvent.detail;
+      if (!message) return;
+      if (message.type === "presenceSnapshot") {
+        applyPresenceSnapshot(message.users);
+        return;
+      }
+      if (message.type === "presenceUpdate") {
+        applyPresenceSnapshot([message.user]);
+      }
+    };
+
+    window.addEventListener(PRESENCE_MESSAGE_EVENT, handlePresenceMessage as EventListener);
+    return () => {
+      window.removeEventListener(PRESENCE_MESSAGE_EVENT, handlePresenceMessage as EventListener);
+    };
+  }, []);
+
+  useEffect(() => {
+    const userIds = friendIdsKey
+      ? friendIdsKey
+          .split(",")
+          .map((value) => Number(value))
+          .filter((value) => Number.isInteger(value) && value > 0)
+      : [];
+    const payload: PresenceWatchPayload = { userIds };
+    window.dispatchEvent(new CustomEvent(PRESENCE_WATCH_EVENT, { detail: payload }));
+  }, [friendIdsKey]);
 
   const handleSendRequest = async () => {
     const trimmed = inviteInput.trim();
@@ -409,24 +496,38 @@ export default function FriendsPage() {
               <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                 <div>
                   <h2 className="text-xl font-semibold">{t("activeFriends")}</h2>
-                  {friendsLoading ? (
-                    <p className="text-sm text-foreground/70">{t("loadingFriends")}</p>
-                  ) : (
-                    <p className="text-sm text-foreground/70">
-                      {filteredFriends.length} friends •{" "}
-                      {filteredFriends.filter((f) => f.status === "online").length}{" "}
-                      {t("statusOnline")}
-                    </p>
-                  )}
+                  <p className="text-sm text-foreground/70 min-h-5">
+                    {friendsLoading
+                      ? t("loadingFriends")
+                      : `${filteredFriends.length} friends • ${
+                          filteredFriends.filter((f) => f.status === "online").length
+                        } ${t("statusOnline")}`}
+                  </p>
                 </div>
               </div>
 
-              <div className="mt-6 space-y-4 lg:flex-1 lg:overflow-y-auto lg:pr-1">
+              <div className="mt-6 space-y-4 min-h-80 lg:flex-1 lg:overflow-y-auto lg:pr-1">
                 {friendsError && (
                   <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
                     {friendsError}
                   </div>
                 )}
+                {friendsLoading &&
+                  friendSkeletonRows.map((row) => (
+                    <div
+                      key={`friend-skeleton-${row}`}
+                      className="flex flex-col gap-4 rounded-2xl border border-black/5 bg-white/50 p-4 md:flex-row md:items-center md:justify-between animate-pulse"
+                    >
+                      <div className="flex items-center gap-4">
+                        <div className="h-12 w-12 rounded-full bg-black/10" />
+                        <div className="space-y-2">
+                          <div className="h-6 w-40 rounded bg-black/10" />
+                          <div className="h-4 w-24 rounded bg-black/10" />
+                        </div>
+                      </div>
+                      <div className="h-10 w-28 rounded-full bg-black/10" />
+                    </div>
+                  ))}
                 {filteredFriends.map((friend) => (
                   <div
                     key={friend.id}
@@ -441,8 +542,6 @@ export default function FriendsPage() {
                           width={48}
                           height={48}
                           className="h-full w-full object-cover"
-                          unoptimized
-                          loader={({ src }) => src}
                           onError={() => {
                             setBrokenAvatarIds((prev) => ({ ...prev, [friend.id]: true }));
                           }}
@@ -510,27 +609,45 @@ export default function FriendsPage() {
                   {inviteStatus.type === "loading" ? t("sending") : t("sendRequest")}
                 </ButtonBasic1>
               </div>
-              {inviteStatus.type !== "idle" && (
-                <p
-                  className={`mt-3 text-sm ${
-                    inviteStatus.type === "error" ? "text-red-600" : "text-emerald-700"
-                  }`}
-                >
-                  {inviteStatus.message}
-                </p>
-              )}
+              <p
+                className={`mt-3 text-sm min-h-5 ${
+                  inviteStatus.type === "idle"
+                    ? "text-transparent"
+                    : inviteStatus.type === "error"
+                    ? "text-red-600"
+                    : "text-emerald-700"
+                }`}
+              >
+                {inviteStatus.type === "idle" ? "." : inviteStatus.message}
+              </p>
             </CardPanelSolid>
             <CardPanelSolid className="w-full! mx-0! h-auto! lg:h-full! p-6! items-stretch flex flex-col lg:min-h-0">
               <h2 className="text-xl font-semibold">{t("requests")}</h2>
-              <p className="text-sm text-foreground/70">
+              <p className="text-sm text-foreground/70 min-h-5">
                 {requestsLoading ? t("loading") : `${requests.length} ${t("pending")}`}
               </p>
-              <div className="mt-4 space-y-3 lg:flex-1 lg:overflow-y-auto lg:pr-1">
+              <div className="mt-4 space-y-3 min-h-55 lg:flex-1 lg:overflow-y-auto lg:pr-1">
                 {requestsError && (
                   <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
                     {requestsError}
                   </div>
                 )}
+                {requestsLoading &&
+                  requestSkeletonRows.map((row) => (
+                    <div
+                      key={`request-skeleton-${row}`}
+                      className="rounded-2xl border border-black/5 bg-white/50 p-4 flex flex-col gap-3 animate-pulse"
+                    >
+                      <div className="space-y-2">
+                        <div className="h-5 w-32 rounded bg-black/10" />
+                        <div className="h-4 w-24 rounded bg-black/10" />
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <div className="h-10 w-28 rounded-full bg-black/10" />
+                        <div className="h-10 w-28 rounded-full bg-black/10" />
+                      </div>
+                    </div>
+                  ))}
                 {requests.map((request) => (
                   <div
                     key={request.id}

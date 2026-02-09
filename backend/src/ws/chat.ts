@@ -2,6 +2,7 @@ import type { FastifyInstance, FastifyRequest } from "fastify";
 import WebSocket, { type RawData } from "ws";
 import { prisma } from "../lib/prisma";
 import { attachHeartbeat, loadFriendIds, scheduleFriendIdsRefresh } from "./utils";
+import { trackUserConnected, trackUserDisconnected } from "./presenceState";
 
 type ClientMessage =
   | { type: "send"; toUserId: number; message: string };
@@ -74,6 +75,7 @@ export async function chatWs(fastify: FastifyInstance) {
     let currentUserId: number | null = null;
     let friendIds: Set<number> = new Set();
     let stopFriendRefresh: (() => void) | null = null;
+    let isPresenceTracked = false;
     try {
       const payload = fastify.jwt.verify(token) as { id?: number };
       if (!payload?.id || !Number.isInteger(payload.id) || payload.id <= 0) {
@@ -87,10 +89,12 @@ export async function chatWs(fastify: FastifyInstance) {
         friendIds = fresh;
       });
       addConnection(currentUserId, socket);
+      trackUserConnected(currentUserId, "chat");
+      isPresenceTracked = true;
       safeSend(socket, { type: "registered", userId: currentUserId });
       try {
         const friendIdList = Array.from(friendIds);
-        const pending = friendIdList.length === 0
+        const pending: Array<{ id: number; senderId: number; content: string }> = friendIdList.length === 0
           ? []
           : await prisma.message.findMany({
             where: {
@@ -112,7 +116,7 @@ export async function chatWs(fastify: FastifyInstance) {
             });
           }
           await prisma.message.updateMany({
-            where: { id: { in: pending.map((msg) => msg.id) } },
+            where: { id: { in: pending.map((msg: { id: number }) => msg.id) } },
             data: { deliveredAt: new Date() },
           });
         }
@@ -213,6 +217,9 @@ export async function chatWs(fastify: FastifyInstance) {
     socket.on("close", () => {
       stopFriendRefresh?.();
       removeConnection(currentUserId, socket);
+      if (currentUserId && isPresenceTracked) {
+        trackUserDisconnected(currentUserId, "chat");
+      }
     });
   });
 }

@@ -6,6 +6,7 @@ import "./globals.css";
 import { Geist, Geist_Mono, Inter } from "next/font/google";
 import { LanguageProvider } from "@/components/LanguageProvider";
 import { AuthProvider } from "@/components/AuthProvider";
+import PresenceSocket from "@/components/PresenceSocket";
 import { ThemeSync } from "@/components/ThemeSync";
 import ThemeToggle from "@/components/ThemeToggle";
 import LanguageToggle from "@/components/LanguageToggle";
@@ -64,6 +65,7 @@ export default function RootLayout({
         {/* <div className="fixed inset-0 z-0 bg-gradient-to-br from-gray-900 to-gray-700 opacity-60 pointer-events-none" /> */}
         <ThemeSync>
           <AuthProvider>
+            <PresenceSocket />
             <LanguageProvider>
               <Logo />
               {/* Fixed position toggles at top right */}

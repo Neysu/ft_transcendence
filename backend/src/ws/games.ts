@@ -3,6 +3,9 @@ import WebSocket, { type RawData } from "ws";
 import { prisma } from "../lib/prisma";
 import { RPSGame, type Move } from "../lib/game/RPS";
 import { attachHeartbeat } from "./utils";
+import { trackUserConnected, trackUserDisconnected } from "./presenceState";
+
+type UserTx = Parameters<Parameters<typeof prisma.$transaction>[0]>[0];
 
 type ClientMessage =
   | { type: "create"; opponentId: number }
@@ -47,6 +50,7 @@ type RoomEntry = {
   hostUserId: number;
   createdAt: number;
 };
+
 
 const connectionsByUserId = new Map<number, Set<WebSocket>>();
 const roomsByCode = new Map<string, RoomEntry>();
@@ -173,6 +177,7 @@ export async function gameWs(fastify: FastifyInstance) {
     }
 
     let currentUserId: number | null = null;
+    let isPresenceTracked = false;
     try {
       const payload = fastify.jwt.verify(token) as { id?: number };
       if (!payload?.id || !Number.isInteger(payload.id) || payload.id <= 0) {
@@ -182,6 +187,8 @@ export async function gameWs(fastify: FastifyInstance) {
       }
       currentUserId = payload.id;
       addConnection(currentUserId, socket);
+      trackUserConnected(currentUserId, "game");
+      isPresenceTracked = true;
       safeSend(socket, { type: "registered", userId: currentUserId });
     } catch {
       safeSend(socket, { type: "error", message: "Invalid token" });
@@ -267,7 +274,7 @@ export async function gameWs(fastify: FastifyInstance) {
         }
 
         try {
-          const created = await prisma.$transaction(async (tx) => {
+          const created = await prisma.$transaction(async (tx: UserTx) => {
             const game = await tx.game.create({
               data: {
                 playerOneId: room.hostUserId,
@@ -438,7 +445,7 @@ export async function gameWs(fastify: FastifyInstance) {
         }
 
         try {
-          const result = await prisma.$transaction(async (tx) => {
+          const result = await prisma.$transaction(async (tx: UserTx) => {
             const game = await tx.game.findUnique({
               where: { id: payload.gameId },
               select: {
@@ -644,6 +651,9 @@ export async function gameWs(fastify: FastifyInstance) {
 
     socket.on("close", () => {
       const remaining = removeConnection(currentUserId, socket);
+      if (currentUserId && isPresenceTracked) {
+        trackUserDisconnected(currentUserId, "game");
+      }
       if (currentUserId && remaining === 0) {
         const roomCode = roomCodeByHost.get(currentUserId);
         if (roomCode) {
