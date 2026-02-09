@@ -58,6 +58,11 @@ export const RpsPlaySchema = z
     path: ["player2"],
   });
 
+export const BotMoveSchema = z.object({
+  gameId: z.number().int().positive(),
+  move: MoveEnum,
+});
+
 export const FriendRequestSchema = z.object({
   toUserId: z.number().int().positive(),
 });

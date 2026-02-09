@@ -9,35 +9,162 @@ import { useLanguage } from "@/components/LanguageProvider";
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 
+type BotGameState = {
+  id: number;
+  playerOneId: number;
+  playerTwoId: number;
+  playerOneScore: number;
+  playerTwoScore: number;
+  round: number;
+  status: "ONGOING" | "FINISHED";
+  finishedAt: string | null;
+};
+
+type BotRoundState = {
+  id: number;
+  roundNumber: number;
+  playerOneMove: "ROCK" | "PAPER" | "SCISSORS" | null;
+  playerTwoMove: "ROCK" | "PAPER" | "SCISSORS" | null;
+  winnerId: number | null;
+};
+
+type BotMoveResponse = {
+  game: BotGameState;
+  round: BotRoundState;
+  outcome: "PLAYER1" | "PLAYER2" | "DRAW";
+  nextRound: BotRoundState | null;
+};
+
+function getToken() {
+  if (typeof window === "undefined") return "";
+  return localStorage.getItem("token") || localStorage.getItem("accessToken") || "";
+}
+
+function getApiBase() {
+  if (typeof window === "undefined") return "http://localhost:3000";
+  return process.env.NEXT_PUBLIC_API_BASE_URL || window.location.origin;
+}
+
+function toChoice(move: BotRoundState["playerTwoMove"]): Choice | null {
+  if (move === "ROCK") return "rock";
+  if (move === "PAPER") return "paper";
+  if (move === "SCISSORS") return "scissors";
+  return null;
+}
+
 export default function PlayVsBotPage() {
   const { t } = useLanguage();
   const router = useRouter();
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [playerChoice, setPlayerChoice] = useState<Choice | null>(null);
+  const [pendingChoice, setPendingChoice] = useState<Choice | null>(null);
   const [opponentChoice, setOpponentChoice] = useState<Choice | null>(null);
   const [isWaitingForBot, setIsWaitingForBot] = useState<boolean>(false);
   const [playerScore, setPlayerScore] = useState<number>(0);
   const [opponentScore, setOpponentScore] = useState<number>(0);
+  const [gameId, setGameId] = useState<number | null>(null);
+  const [gameStatus, setGameStatus] = useState<BotGameState["status"]>("ONGOING");
+  const [errorMessage, setErrorMessage] = useState<string>("");
   const choiceSize = "clamp(84px, 20vw, 160px)";
   const opponentSize = "clamp(80px, 18vw, 160px)";
 
+  useEffect(() => {
+    const token = getToken();
+    if (!token) {
+      setErrorMessage("Missing auth token");
+      return;
+    }
+
+    const createGame = async () => {
+      try {
+        setIsLoading(true);
+        setErrorMessage("");
+        const response = await fetch(`${getApiBase()}/api/game/bot/create`, {
+          method: "POST",
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!response.ok) {
+          setErrorMessage("Failed to create bot game");
+          return;
+        }
+        const data = (await response.json()) as { game: BotGameState; round: BotRoundState };
+        setGameId(data.game.id);
+        setGameStatus(data.game.status);
+        setPlayerScore(data.game.playerOneScore);
+        setOpponentScore(data.game.playerTwoScore);
+      } catch (error) {
+        setErrorMessage("Failed to create bot game");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    createGame();
+  }, []);
+
   const handlePlayerChoice = (choice: Choice) => {
-    setPlayerChoice(choice);
-    setIsWaitingForBot(true);
-    // TODO: Send choice to backend and receive bot's choice
-    // TODO: After backend responds with result, update scores:
-    // Example: if player wins -> setPlayerScore(playerScore + 1)
-    //          if bot wins -> setOpponentScore(opponentScore + 1)
-    console.log("Player chose:", choice);
+    if (gameStatus === "FINISHED") {
+      return;
+    }
+    if (playerChoice || isWaitingForBot || !gameId) {
+      return;
+    }
+    setPendingChoice(choice);
+  };
+
+  const handleValidateChoice = async () => {
+    if (gameStatus === "FINISHED") {
+      return;
+    }
+    if (!pendingChoice || !gameId) {
+      return;
+    }
+    const token = getToken();
+    if (!token) {
+      setErrorMessage("Missing auth token");
+      return;
+    }
+
+    try {
+      setIsWaitingForBot(true);
+      const move =
+        pendingChoice === "rock" ? "ROCK" : pendingChoice === "paper" ? "PAPER" : "SCISSORS";
+      const response = await fetch(`${getApiBase()}/api/game/bot/move`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ gameId, move }),
+      });
+      if (!response.ok) {
+        setErrorMessage("Failed to play round");
+        return;
+      }
+      const data = (await response.json()) as BotMoveResponse;
+      setGameStatus(data.game.status);
+      setPlayerScore(data.game.playerOneScore);
+      setOpponentScore(data.game.playerTwoScore);
+      setPlayerChoice(pendingChoice);
+      setOpponentChoice(toChoice(data.round.playerTwoMove));
+      setPendingChoice(null);
+    } catch (error) {
+      setErrorMessage("Failed to play round");
+    } finally {
+      setIsWaitingForBot(false);
+    }
   };
 
   const handlePlayAgain = () => {
+    if (gameStatus === "FINISHED") {
+      return;
+    }
     setPlayerChoice(null);
+    setPendingChoice(null);
     setOpponentChoice(null);
     setIsWaitingForBot(false);
     // Scores are NOT reset here - they persist across rounds
     // Scores only reset when user leaves the page
-    // TODO: Send new round request to backend
   };
 
   return (
@@ -52,7 +179,18 @@ export default function PlayVsBotPage() {
         <CardPanel className="w-full max-w-[95vw] h-auto min-h-[60vh] flex !px-3 sm:!px-6 md:!px-12 mx-auto">
           <CardPanelSolid className="flex-1 !w-full !mx-0 h-auto !p-2 sm:!p-3 md:!p-6 flex flex-col items-center justify-between gap-5">
             {/* Page title */}
-            <h1 className="text-lg sm:text-xl font-bold text-center -mt-1">{t("playVsBots")}</h1>
+            <div className="flex flex-col items-center gap-1 -mt-1">
+              <h1 className="text-lg sm:text-xl font-bold text-center">{t("playVsBots")}</h1>
+              {isLoading ? (
+                <p className="text-xs text-gray-500 dark:text-gray-400">Creating game...</p>
+              ) : null}
+              {errorMessage ? (
+                <p className="text-xs text-red-500">{errorMessage}</p>
+              ) : null}
+              {gameStatus === "FINISHED" ? (
+                <p className="text-xs text-green-600 dark:text-green-400">Game finished</p>
+              ) : null}
+            </div>
             
             {/* TOP: Opponent's choice */}
             <div className="flex flex-col items-center gap-3 -mt-2 sm:-mt-4 md:-mt-6">
@@ -85,7 +223,15 @@ export default function PlayVsBotPage() {
               </div>
               
               {/* Play Again Button */}
-              <div className="h-10 flex items-center justify-center mt-4">
+              <div className="h-10 flex items-center justify-center mt-4 gap-3">
+                <button
+                  onClick={handleValidateChoice}
+                  className={`px-6 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors ${
+                    pendingChoice && !playerChoice ? "opacity-100" : "opacity-0 pointer-events-none"
+                  }`}
+                >
+                  Validate
+                </button>
                 <button
                   onClick={handlePlayAgain}
                   className={`px-6 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors ${playerChoice ? "opacity-100" : "opacity-0 pointer-events-none"}`}
@@ -99,9 +245,15 @@ export default function PlayVsBotPage() {
             <div className="flex flex-col items-center gap-4 w-full">
               <p className="text-sm text-gray-600 dark:text-gray-300">{t("yourChoice")}:</p>
               <div className="flex flex-wrap gap-3 sm:gap-4 justify-center">
-                <RPSChoice size={choiceSize} choice="rock" onClick={handlePlayerChoice} />
-                <RPSChoice size={choiceSize} choice="paper" onClick={handlePlayerChoice} />
-                <RPSChoice size={choiceSize} choice="scissors" onClick={handlePlayerChoice} />
+                <div className={playerChoice ? "pointer-events-none opacity-60" : ""}>
+                  <RPSChoice size={choiceSize} choice="rock" onClick={handlePlayerChoice} />
+                </div>
+                <div className={playerChoice ? "pointer-events-none opacity-60" : ""}>
+                  <RPSChoice size={choiceSize} choice="paper" onClick={handlePlayerChoice} />
+                </div>
+                <div className={playerChoice ? "pointer-events-none opacity-60" : ""}>
+                  <RPSChoice size={choiceSize} choice="scissors" onClick={handlePlayerChoice} />
+                </div>
               </div>
             </div>
 

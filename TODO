@@ -17,7 +17,13 @@ Objectifs du site :
 
 IA :
 	- "semblant d'humaniter", choix relativement previsible en fonction des choix precedant
-	- preferance pour certains signes
+	- preferance artificiel pour certains signes
+	- elle choisi deux nombres tous superieurs l'un a l'autres ils doivent-etre inferieur a 10, le troisieme nombre dois toujours etre 10 par exemple ->
+		3, 7 et 10;
+	- chacun des nombres doivent correspondre a un symbole :
+		0 a 3 -> pierre
+		4 a 7 -> ciseaux 
+		8 a 10 -> feuille
 	- example d'implementation que j'ai en tete en javascript ->
 
 		// l'implementation est vraiment simple mais efficace en mon sens des améliorations sont bienvenue evidements

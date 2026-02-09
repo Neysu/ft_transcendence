@@ -20,4 +20,15 @@ export class RPSGame {
     const index = Math.floor(Math.random() * moves.length);
     return moves[index];
   }
+
+  // Weighted AI: picks thresholds each round, then rolls 1-10.
+  static getWeightedAIMove(): Move {
+    const first = Math.floor(Math.random() * 9) + 1;
+    const second = Math.floor(Math.random() * (10 - first)) + first + 1;
+    const roll = Math.floor(Math.random() * 10) + 1;
+
+    if (roll <= first) return "ROCK";
+    if (roll <= second) return "PAPER";
+    return "SCISSORS";
+  }
 }
