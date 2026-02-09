@@ -71,7 +71,9 @@ export const RPSOpponent: React.FC<RPSOpponentProps> = ({
         <img
           src={imageMap[opponentChoice]}
           alt={opponentChoice}
+          draggable={false}
           className="object-cover w-full h-full"
+          onDragStart={(event) => event.preventDefault()}
         />
       ) : (
         // NO CHOICE YET: Empty state before game starts

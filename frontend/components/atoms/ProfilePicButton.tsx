@@ -31,7 +31,7 @@ export const ProfilePicButton: React.FC<ProfilePicButtonProps> = ({
   return (
     <button
       onClick={onClick}
-      className="rounded-full overflow-hidden border-4 border-white bg-white shadow-lg hover:scale-110 active:scale-95 transition-transform duration-200 focus:outline-none focus:ring-4 focus:ring-purple-500"
+      className="rounded-full overflow-hidden border border-white/25 bg-white/10 shadow-md hover:scale-105 active:scale-95 transition-transform duration-200 focus:outline-none focus:ring-2 focus:ring-cyan-400/70 focus:ring-offset-2 focus:ring-offset-transparent"
       style={{ width: size, height: size }}
     >
       <Image
@@ -39,9 +39,9 @@ export const ProfilePicButton: React.FC<ProfilePicButtonProps> = ({
         alt="Profile"
         width={size}
         height={size}
-        unoptimized
-        loader={({ src }) => src}
+        draggable={false}
         className="object-cover w-full h-full"
+        onDragStart={(event) => event.preventDefault()}
         onError={() => {
           if (currentImage !== DEFAULT_AVATAR_PATH) {
             setCurrentImage(DEFAULT_AVATAR_PATH);

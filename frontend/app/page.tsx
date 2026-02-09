@@ -41,16 +41,16 @@ export default function Home() {
         </div>
 
         {/* Friends list button centered below */}
-        <ButtonBasic1 onClick={() => (router.push("/friends"), console.log("Friends List"))} className="!w-64 !h-20 text-xl">
+        <ButtonBasic1 onClick={() => (router.push("/friends"), console.log("Friends List"))} className="w-64! h-20! text-xl">
           {t("friendsList")}
         </ButtonBasic1>
       </main>
 
       {/* Logout button positioned at bottom right */}
-      <div className="fixed bottom-8 right-8">
-        <ButtonLarge onClick={handleLogout} className="scale-[0.35] origin-bottom-right text-5xl hover:!scale-[0.35]">
+      <div className="fixed bottom-4 right-4 z-40">
+        <ButtonBasic1 onClick={handleLogout} className="w-36! h-11! text-base">
           {t("logout")}
-        </ButtonLarge>
+        </ButtonBasic1>
       </div>
     </>
   );

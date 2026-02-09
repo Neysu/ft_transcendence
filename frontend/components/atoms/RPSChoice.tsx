@@ -71,7 +71,9 @@ export const RPSChoice: React.FC<RPSChoiceProps> = ({
       <img
         src={imageMap[choice]}
         alt={choice}
+        draggable={false}
         className="object-cover w-full h-full"
+        onDragStart={(event) => event.preventDefault()}
       />
     </button>
   );

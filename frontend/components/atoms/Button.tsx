@@ -11,27 +11,13 @@ export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
  * A simple, reusable button atom with theme-aware styling.
  */
 export const ButtonBasic1: React.FC<ButtonProps> = ({ variant = "primary", children, className = "", ...props }) => {
-  // Detect theme from document
-  const [theme, setTheme] = React.useState<string>("green");
-  React.useEffect(() => {
-    if (typeof document !== "undefined") {
-      setTheme(document.documentElement.getAttribute("data-theme") || "green");
-    }
-    const observer = new MutationObserver(() => {
-      setTheme(document.documentElement.getAttribute("data-theme") || "green");
-    });
-    observer.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
-    return () => observer.disconnect();
-  }, []);
-
-  // Theme-aware color
   let base = "";
   if (variant === "primary") {
-    base = theme === "purple"
-      ? "bg-[#E1DDB1] text-[#3A0766] hover:bg-[#BEBCA1]"
-      : "bg-[#9D33FA] text-[#D9D9D9] hover:bg-purple-700";
+    base =
+      "bg-[var(--btn-primary-bg)] text-[var(--btn-primary-text)] hover:bg-[var(--btn-primary-bg-hover)]";
   } else {
-    base = "bg-[#E1DDB1] text-[#3A0766] border border-[#3A0766] hover:bg-[#BEBCA1]";
+    base =
+      "bg-[var(--btn-secondary-bg)] text-[var(--btn-secondary-text)] border border-[var(--btn-secondary-border)] hover:bg-[var(--btn-secondary-bg-hover)]";
   }
 
   return (

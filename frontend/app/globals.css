@@ -40,6 +40,13 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
+  --btn-primary-bg: #9D33FA;
+  --btn-primary-text: #D9D9D9;
+  --btn-primary-bg-hover: #7e22ce;
+  --btn-secondary-bg: #E1DDB1;
+  --btn-secondary-text: #3A0766;
+  --btn-secondary-border: #3A0766;
+  --btn-secondary-bg-hover: #BEBCA1;
 }
 
 /* Theme 2: Purple theme (activated via data-theme="purple") */
@@ -51,6 +58,13 @@
   --accent: #9D33FA;
   --muted: #9BFA32;
   --border: #9D33FA;
+  --btn-primary-bg: #E1DDB1;
+  --btn-primary-text: #3A0766;
+  --btn-primary-bg-hover: #BEBCA1;
+  --btn-secondary-bg: #E1DDB1;
+  --btn-secondary-text: #3A0766;
+  --btn-secondary-border: #3A0766;
+  --btn-secondary-bg-hover: #BEBCA1;
 }
 
 /* Map CSS variables to Tailwind theme tokens */

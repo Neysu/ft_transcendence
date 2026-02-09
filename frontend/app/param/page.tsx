@@ -68,8 +68,6 @@ export default function ParamPage() {
                           alt="Profile"
                           width={64}
                           height={64}
-                          unoptimized
-                          loader={({ src }) => src}
                           className="object-cover w-full h-full"
                           onError={(e) => {
                             // Fallback to default image if loading fails

@@ -145,8 +145,6 @@ export default function ChangeProfilePicturePage() {
                     alt="Profile preview"
                     width={160}
                     height={160}
-                    unoptimized
-                    loader={({ src }) => src}
                     className="object-cover w-full h-full"
                     onError={(e) => {
                       const target = e.target as HTMLImageElement;

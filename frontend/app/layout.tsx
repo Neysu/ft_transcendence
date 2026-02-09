@@ -44,6 +44,11 @@ export default function RootLayout({
   return (
     <html lang="en" className={inter.variable} suppressHydrationWarning>
       <head>
+        <title>ft_transcendence</title>
+        <meta
+          name="description"
+          content="ft_transcendence: jeu Pong en ligne avec amis, chat et profil utilisateur."
+        />
         <script
           dangerouslySetInnerHTML={{
             __html: `
