@@ -8,6 +8,13 @@ import { parseOrReply } from "../../../lib/api/validation";
 import { deleteUserSchema } from "../../../swagger/schemas";
 import { authMiddleware } from "../../../middleware/auth";
 
+type UserDeleteTx = {
+  message: typeof prisma.message;
+  friendship: typeof prisma.friendship;
+  post: typeof prisma.post;
+  user: typeof prisma.user;
+};
+
 export async function deleteUser(fastify: FastifyInstance) {
   fastify.register(async function (fastify) {
 
@@ -38,7 +45,7 @@ export async function deleteUser(fastify: FastifyInstance) {
         }
 
         const profileImage = user.profileImage;
-        await prisma.$transaction(async (tx) => {
+        await prisma.$transaction(async (tx: UserDeleteTx) => {
           await tx.message.deleteMany({
             where: {
               OR: [{ senderId: user.id }, { receiverId: user.id }],

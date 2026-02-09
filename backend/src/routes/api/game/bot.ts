@@ -6,6 +6,8 @@ import { parseOrReply } from "../../../lib/api/validation";
 import { authMiddleware } from "../../../middleware/auth";
 import { BotMoveSchema } from "../../../lib/api/schemasZod";
 
+type UserTx = Parameters<Parameters<typeof prisma.$transaction>[0]>[0];
+
 const BOT_USERNAME = "rps_bot";
 const BOT_EMAIL = "rps_bot@local";
 const BOT_PASSWORD = "rps_bot";
@@ -121,7 +123,7 @@ export async function botGameRoute(fastify: FastifyInstance) {
           }
 
           const botId = await getOrCreateBotId();
-          const created = await prisma.$transaction(async (tx) => {
+          const created = await prisma.$transaction(async (tx: UserTx) => {
             const game = await tx.game.create({
               data: { playerOneId: authUserId, playerTwoId: botId },
               select: {
@@ -176,7 +178,7 @@ export async function botGameRoute(fastify: FastifyInstance) {
           }
 
           const botId = await getOrCreateBotId();
-          const result = await prisma.$transaction(async (tx) => {
+          const result = await prisma.$transaction(async (tx: UserTx) => {
             const game = await tx.game.findUnique({
               where: { id: body.gameId },
               select: {
