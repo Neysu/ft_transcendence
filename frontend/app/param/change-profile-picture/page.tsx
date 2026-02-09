@@ -16,7 +16,7 @@ import { useRequireAuth } from "@/hooks/useRequireAuth";
 export default function ChangeProfilePicturePage() {
   const { t } = useLanguage();
   const { refreshMe, updateMe } = useAuth();
-  const { me, isAuthLoading, isAuthenticated } = useRequireAuth({ refreshIfMissing: false });
+  const { me, isAuthLoading, isAuthenticated } = useRequireAuth();
   const router = useRouter();
   
   const [previewImage, setPreviewImage] = useState<string>("");

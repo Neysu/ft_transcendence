@@ -6,14 +6,12 @@ import { useAuth } from "@/components/AuthProvider";
 
 type UseRequireAuthOptions = {
   redirectTo?: string;
-  refreshIfMissing?: boolean;
 };
 
 export function useRequireAuth(options?: UseRequireAuthOptions) {
-  const { me, isAuthenticated, isAuthLoading, refreshMe } = useAuth();
+  const { me, isAuthenticated, isAuthLoading } = useAuth();
   const router = useRouter();
   const redirectTo = options?.redirectTo ?? "/landing/signin";
-  const refreshIfMissing = options?.refreshIfMissing ?? true;
 
   useEffect(() => {
     if (isAuthLoading) {
@@ -21,12 +19,8 @@ export function useRequireAuth(options?: UseRequireAuthOptions) {
     }
     if (!isAuthenticated) {
       router.push(redirectTo);
-      return;
     }
-    if (refreshIfMissing && !me) {
-      void refreshMe();
-    }
-  }, [isAuthLoading, isAuthenticated, me, refreshIfMissing, refreshMe, redirectTo, router]);
+  }, [isAuthLoading, isAuthenticated, redirectTo, router]);
 
   return {
     me,

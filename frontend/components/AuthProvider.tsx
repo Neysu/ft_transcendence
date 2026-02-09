@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useCallback, useContext, useEffect, useState } from "react";
-import { fetchJson } from "@/lib/api";
+import { FetchJsonError, fetchJson } from "@/lib/api";
 
 export const AUTH_CHANGED_EVENT = "auth-changed";
 
@@ -63,8 +63,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       } else {
         setMe(null);
       }
-    } catch {
-      setMe(null);
+    } catch (error) {
+      if (error instanceof FetchJsonError && (error.status === 401 || error.status === 403)) {
+        setMe(null);
+      }
     } finally {
       setIsAuthLoading(false);
     }
