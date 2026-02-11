@@ -469,7 +469,7 @@ export default function FriendsPage() {
   return (
     <div className="relative min-h-[calc(100vh-160px)]">
       <div className="fixed top-5 left-4 z-50">
-        <ButtonCircleBack onClick={() => router.push("/")} />
+        <ButtonCircleBack onClick={() => router.back()} />
       </div>
 
       <main className="min-h-[calc(100vh-160px)] px-4 sm:px-6 py-8 sm:py-10">

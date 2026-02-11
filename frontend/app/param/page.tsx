@@ -23,14 +23,14 @@ export default function ParamPage() {
   return (
     <div className="relative min-h-[calc(100vh-160px)]">
       <div className="fixed top-5 left-4 z-50">
-        <ButtonCircleBack onClick={() => router.push("/")} />
+        <ButtonCircleBack onClick={() => router.back()} />
       </div>
       <div className="flex items-center justify-center min-h-[calc(100vh-160px)] px-4">
         <CardPanel className="w-full max-w-6xl h-auto min-h-[55vh] flex !px-6 mx-auto">
           <CardPanelSolid className="flex-1 !w-full !mx-0 h-auto !p-6 flex flex-col items-center">
             {/* Page title fixed at top */}
             <h1 className="text-3xl font-bold text-center pb-6">{t("settings")}</h1>
-            
+
             {/* Settings container centered vertically */}
             <div className="flex-1 flex items-center justify-center w-full">
               <div className="flex flex-col gap-6 w-full max-w-4xl mx-auto">
@@ -44,7 +44,7 @@ export default function ParamPage() {
                     {t("change")}
                   </ButtonBasic1>
                 </div>
-                
+
                 {/* Username Row */}
                 <div className="flex items-center justify-between gap-8 p-4 rounded-lg bg-white/20 backdrop-blur-sm border border-white/30">
                   <div className="flex flex-col gap-1">
@@ -55,7 +55,7 @@ export default function ParamPage() {
                     {t("change")}
                   </ButtonBasic1>
                 </div>
-                
+
                 {/* Profile Picture Row */}
                 <div className="flex items-center justify-between gap-8 p-4 rounded-lg bg-white/20 backdrop-blur-sm border border-white/30">
                   <div className="flex items-center gap-4">
@@ -85,7 +85,7 @@ export default function ParamPage() {
                     {t("change")}
                   </ButtonBasic1>
                 </div>
-                
+
                 {/* Password Row - no current value displayed */}
                 <div className="flex items-center justify-between gap-8 p-4 rounded-lg bg-white/20 backdrop-blur-sm border border-white/30">
                   <div className="flex flex-col gap-1">

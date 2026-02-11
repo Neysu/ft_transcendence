@@ -14,7 +14,7 @@ import { useState } from "react";
 export default function SignUp() {
   const { t } = useLanguage();
   const router = useRouter();
-  
+
   // Form state for all registration fields
   const [email, setEmail] = useState("");
   const [username, setUsername] = useState("");
@@ -27,43 +27,43 @@ export default function SignUp() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
-    
+
     // Validation
     if (!email || !username || !password || !confirmPassword) {
       setError(t("fillAllFields") || "Please fill all fields");
       return;
     }
-    
+
     // Validate password confirmation
     if (password !== confirmPassword) {
       setError(t("passwordsDoNotMatch") || "Passwords do not match");
       return;
     }
-    
+
     // Password validation
     if (password.length < 8) {
       setError(t("passwordTooShort") || "Password must be at least 8 characters");
       return;
     }
-    
+
     if (!/[A-Z]/.test(password)) {
       setError(t("passwordNeedsUppercase") || "Password must contain at least one uppercase letter");
       return;
     }
-    
+
     if (!/[0-9]/.test(password)) {
       setError(t("passwordNeedsNumber") || "Password must contain at least one number");
       return;
     }
-    
+
     // Username validation
     if (username.length < 3 || username.length > 20) {
       setError(t("invalidUsername") || "Username must be 3-20 characters");
       return;
     }
-    
+
     setIsLoading(true);
-    
+
     try {
       await fetchJson<{ id: number }>("/api/user", {
         method: "POST",
@@ -79,7 +79,7 @@ export default function SignUp() {
         defaultMessage: "Registration failed",
         statusMessages: { 409: t("userExists") || "User already exists with this email or username" },
       });
-      
+
       // Registration successful - now login
       const loginData = await fetchJson<{ token: string; id: number; username: string }>(
         "/api/user/login",
@@ -95,13 +95,13 @@ export default function SignUp() {
         },
         { defaultMessage: "Registration successful but login failed. Please sign in." },
       );
-      
+
       // Store token in localStorage
       localStorage.setItem("token", loginData.token);
       localStorage.setItem("userId", String(loginData.id));
       localStorage.setItem("username", loginData.username);
       window.dispatchEvent(new Event(AUTH_CHANGED_EVENT));
-      
+
       // Redirect to home page
       router.push("/");
     } catch (error) {
@@ -124,7 +124,7 @@ export default function SignUp() {
       <div className="fixed top-5 left-4 z-50">
         <ButtonCircleBack onClick={() => router.back()} />
       </div>
-      
+
       {/* Main content centered */}
       <div className="flex items-center justify-center min-h-[calc(100vh-160px)]">
         <CardPanel className="w-full max-w-6xl h-auto min-h-[70vh] flex !px-6">

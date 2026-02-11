@@ -18,13 +18,13 @@ export default function ChangeProfilePicturePage() {
   const { refreshMe, updateMe } = useAuth();
   const { me, isAuthLoading, isAuthenticated } = useRequireAuth();
   const router = useRouter();
-  
+
   const [previewImage, setPreviewImage] = useState<string>("");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>("");
   const fileInputRef = useRef<HTMLInputElement>(null);
-  
+
   useEffect(() => {
     if (isAuthLoading || !isAuthenticated) {
       return;
@@ -33,28 +33,28 @@ export default function ChangeProfilePicturePage() {
       setPreviewImage(resolveAvatarUrl(me?.profileImage || DEFAULT_AVATAR_PATH));
     }
   }, [isAuthLoading, isAuthenticated, me, selectedFile]);
-  
+
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    
+
     // Validate file type
     const validTypes = ["image/jpeg", "image/jpg", "image/png", "image/gif", "image/webp"];
     if (!validTypes.includes(file.type)) {
       setError(t("invalidFileType") || "Invalid file type. Please select an image (JPG, PNG, GIF, WEBP)");
       return;
     }
-    
+
     // Validate file size (max 5MB)
     const maxSize = 5 * 1024 * 1024; // 5MB
     if (file.size > maxSize) {
       setError(t("fileTooLarge") || "File too large. Maximum size is 5MB");
       return;
     }
-    
+
     setError("");
     setSelectedFile(file);
-    
+
     // Create preview
     const reader = new FileReader();
     reader.onloadend = () => {
@@ -62,18 +62,18 @@ export default function ChangeProfilePicturePage() {
     };
     reader.readAsDataURL(file);
   };
-  
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
-    
+
     if (!selectedFile) {
       setError(t("selectImage") || "Please select an image");
       return;
     }
-    
+
     setIsLoading(true);
-    
+
     try {
       const token = localStorage.getItem("token") || localStorage.getItem("accessToken");
       const userId = me?.id;
@@ -81,11 +81,11 @@ export default function ChangeProfilePicturePage() {
         router.push("/landing/signin");
         return;
       }
-      
+
       // Create FormData to send the file
       const formData = new FormData();
       formData.append("avatar", selectedFile);
-      
+
       const data = await fetchJson<{ profileImage?: string | null }>(`/api/user/avatar/${userId}`, {
         method: "PUT",
         headers: {
@@ -99,7 +99,7 @@ export default function ChangeProfilePicturePage() {
           413: t("fileTooLarge") || "File too large. Maximum size is 5MB",
         },
       });
-      
+
       // Success - redirect back to settings
       if (data?.profileImage) {
         updateMe({ profileImage: data.profileImage });
@@ -121,22 +121,22 @@ export default function ChangeProfilePicturePage() {
       setIsLoading(false);
     }
   };
-  
+
   const handleButtonClick = () => {
     fileInputRef.current?.click();
   };
-  
+
   return (
     <main className="relative min-h-[calc(100vh-160px)]">
       <div className="fixed top-5 left-4 z-50">
-        <ButtonCircleBack onClick={() => router.push("/")} />
+        <ButtonCircleBack onClick={() => router.back()} />
       </div>
       <div className="flex items-center justify-center min-h-[calc(100vh-160px)]">
         <CardPanel className="w-full max-w-6xl h-auto min-h-[55vh] flex !px-6">
           <CardPanelSolid className="flex-1 !w-full !mx-0 h-auto !p-2" style={{ margin: "15px" }}>
             <form onSubmit={handleSubmit} className="flex flex-col items-center justify-center gap-6 w-full h-full py-8">
               <h1 className="text-3xl font-bold">{t("changeProfilePicture") || "Change Profile Picture"}</h1>
-              
+
               {/* Image preview */}
               <div className="flex flex-col items-center gap-4">
                 <div className="rounded-full overflow-hidden border-4 border-white bg-white shadow-lg" style={{ width: 160, height: 160 }}>
@@ -156,7 +156,7 @@ export default function ChangeProfilePicturePage() {
                   {selectedFile ? selectedFile.name : t("noFileSelected") || "No file selected"}
                 </span>
               </div>
-              
+
               {/* Hidden file input */}
               <input
                 ref={fileInputRef}
@@ -166,7 +166,7 @@ export default function ChangeProfilePicturePage() {
                 className="hidden"
                 disabled={isLoading}
               />
-              
+
               {/* Select image button */}
               <button
                 type="button"
@@ -176,21 +176,21 @@ export default function ChangeProfilePicturePage() {
               >
                 {t("selectImage") || "Select Image"}
               </button>
-              
+
               <div className="text-xs opacity-60 text-center max-w-sm">
                 {t("imageRequirements") || "Supported formats: JPG, PNG, GIF, WEBP. Maximum size: 5MB"}
               </div>
-              
+
               {/* Error message */}
               {error && (
                 <div className="w-full max-w-sm text-red-500 text-sm text-center">
                   {error}
                 </div>
               )}
-              
+
               {/* Submit button */}
-              <ButtonSubmite 
-                onClick={handleSubmit} 
+              <ButtonSubmite
+                onClick={handleSubmit}
                 className="mt-6"
                 disabled={isLoading || !selectedFile}
               />

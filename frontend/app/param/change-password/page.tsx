@@ -15,51 +15,51 @@ export default function ChangePasswordPage() {
   const { t } = useLanguage();
   const { me } = useRequireAuth();
   const router = useRouter();
-  
+
   const [currentPassword, setCurrentPassword] = useState<string>("");
   const [newPassword, setNewPassword] = useState<string>("");
   const [confirmPassword, setConfirmPassword] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>("");
-  
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
-    
+
     // Validation
     if (!currentPassword || !newPassword || !confirmPassword) {
       setError(t("fillAllFields") || "Please fill all fields");
       return;
     }
-    
+
     if (newPassword !== confirmPassword) {
       setError(t("passwordsDoNotMatch") || "Passwords do not match");
       return;
     }
-    
+
     if (newPassword === currentPassword) {
       setError(t("samePassword") || "New password is the same as current password");
       return;
     }
-    
+
     // Password validation - at least 8 characters, 1 uppercase, 1 number
     if (newPassword.length < 8) {
       setError(t("passwordTooShort") || "Password must be at least 8 characters");
       return;
     }
-    
+
     if (!/[A-Z]/.test(newPassword)) {
       setError(t("passwordNeedsUppercase") || "Password must contain at least one uppercase letter");
       return;
     }
-    
+
     if (!/[0-9]/.test(newPassword)) {
       setError(t("passwordNeedsNumber") || "Password must contain at least one number");
       return;
     }
-    
+
     setIsLoading(true);
-    
+
     try {
       const token = localStorage.getItem("token") || localStorage.getItem("accessToken");
       const userId = me?.id;
@@ -67,7 +67,7 @@ export default function ChangePasswordPage() {
         router.push("/landing/signin");
         return;
       }
-      
+
       await fetchJson<{ id: number }>(`/api/user/${userId}/password`, {
         method: "PUT",
         headers: {
@@ -84,7 +84,7 @@ export default function ChangePasswordPage() {
           401: t("currentPasswordIncorrect") || "Current password is incorrect",
         },
       });
-      
+
       // Success - redirect back to settings
       router.push("/param");
     } catch (error) {
@@ -102,18 +102,18 @@ export default function ChangePasswordPage() {
       setIsLoading(false);
     }
   };
-  
+
   return (
     <main className="relative min-h-[calc(100vh-160px)]">
       <div className="fixed top-5 left-4 z-50">
-        <ButtonCircleBack onClick={() => router.push("/")} />
+        <ButtonCircleBack onClick={() => router.back()} />
       </div>
       <div className="flex items-center justify-center min-h-[calc(100vh-160px)]">
         <CardPanel className="w-full max-w-6xl h-auto min-h-[55vh] flex !px-6">
           <CardPanelSolid className="flex-1 !w-full !mx-0 h-auto !p-2" style={{ margin: "15px" }}>
             <form onSubmit={handleSubmit} className="flex flex-col items-center justify-center gap-6 w-full h-full py-8">
               <h1 className="text-3xl font-bold">{t("changePassword") || "Change Password"}</h1>
-              
+
               {/* Current password input */}
               <div className="w-full max-w-sm flex flex-col gap-2">
                 <label className="text-sm font-semibold">{t("currentPassword") || "Current Password"}</label>
@@ -126,7 +126,7 @@ export default function ChangePasswordPage() {
                   disabled={isLoading}
                 />
               </div>
-              
+
               {/* New password input */}
               <div className="w-full max-w-sm flex flex-col gap-2">
                 <label className="text-sm font-semibold">{t("newPassword") || "New Password"}</label>
@@ -142,7 +142,7 @@ export default function ChangePasswordPage() {
                   {t("passwordRequirements") || "Min. 8 characters, 1 uppercase, 1 number"}
                 </span>
               </div>
-              
+
               {/* Confirm password input */}
               <div className="w-full max-w-sm flex flex-col gap-2">
                 <label className="text-sm font-semibold">{t("confirmPassword") || "Confirm Password"}</label>
@@ -155,17 +155,17 @@ export default function ChangePasswordPage() {
                   disabled={isLoading}
                 />
               </div>
-              
+
               {/* Error message */}
               {error && (
                 <div className="w-full max-w-sm text-red-500 text-sm text-center">
                   {error}
                 </div>
               )}
-              
+
               {/* Submit button */}
-              <ButtonSubmite 
-                onClick={handleSubmit} 
+              <ButtonSubmite
+                onClick={handleSubmit}
                 className="mt-6"
                 disabled={isLoading}
               />

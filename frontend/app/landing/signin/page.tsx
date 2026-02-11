@@ -37,15 +37,15 @@ export default function SignIn() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
-    
+
     // Validation
     if (!username || !password) {
       setError(t("fillAllFields"));
       return;
     }
-    
+
     setIsLoading(true);
-    
+
     try {
       const data = await fetchJson<{ token: string; id: number; username: string }>(
         "/api/user/login",
@@ -64,13 +64,13 @@ export default function SignIn() {
           statusMessages: { 401: t("incorrectCredentials") },
         },
       );
-      
+
       // Store token in localStorage
       localStorage.setItem("token", data.token);
       localStorage.setItem("userId", String(data.id));
       localStorage.setItem("username", data.username);
       window.dispatchEvent(new Event(AUTH_CHANGED_EVENT));
-      
+
       // Redirect to home page
       router.push("/");
     } catch (error) {
@@ -134,13 +134,13 @@ export default function SignIn() {
 
               {/* Submit button */}
               <ButtonSubmite onClick={handleSubmit} className="mt-6" disabled={isLoading} />
-              
+
               {/* Sign up button - same style as submit */}
               <button
                 type="button"
                 onClick={() => router.push("/landing/signup")}
                 className="px-8 py-3 font-semibold rounded-lg transition-transform hover:scale-105 active:scale-95 text-white shadow-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black mt-4"
-                style={{ 
+                style={{
                   backgroundColor: theme === 'purple' ? '#9D33FA' : '#9BFA32'
                 }}
               >

@@ -8,7 +8,7 @@ import { useRouter } from "next/navigation";
 
 /**
  * Home Page Component
- * 
+ *
  * The main page with game mode selection and friends list access.
  */
 export default function Home() {
@@ -16,7 +16,7 @@ export default function Home() {
   const { t } = useLanguage();
   const { logout } = useAuth();
   const router = useRouter();
-  
+
   const handleLogout = () => {
     logout();
     // Redirect to landing page
