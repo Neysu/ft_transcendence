@@ -11,8 +11,7 @@ if you don't want to do that you can just add sudo before the command
 to start docker just run 
 
 ```bash
-
-docker-compose up --build 
+docker-compose -f docker/docker-compose.yml up --build 
 
 ```
 
