@@ -155,9 +155,35 @@ export default function PlayVsBotPage() {
     }
   };
 
-  const handlePlayAgain = () => {
+  const handlePlayAgain = async () => {
     if (gameStatus === "FINISHED") {
-      return;
+      // Game is over — start a brand-new game
+      const token = getToken();
+      if (!token) {
+        setErrorMessage("Missing auth token");
+        return;
+      }
+      try {
+        setIsLoading(true);
+        setErrorMessage("");
+        const response = await fetch(`${getApiBase()}/api/game/bot/create`, {
+          method: "POST",
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!response.ok) {
+          setErrorMessage("Failed to create bot game");
+          return;
+        }
+        const data = (await response.json()) as { game: BotGameState; round: BotRoundState };
+        setGameId(data.game.id);
+        setGameStatus(data.game.status);
+        setPlayerScore(data.game.playerOneScore);
+        setOpponentScore(data.game.playerTwoScore);
+      } catch {
+        setErrorMessage("Failed to create bot game");
+      } finally {
+        setIsLoading(false);
+      }
     }
     setPlayerChoice(null);
     setPendingChoice(null);
@@ -191,7 +217,7 @@ export default function PlayVsBotPage() {
                 <p className="text-xs text-green-600 dark:text-green-400">Game finished</p>
               ) : null}
             </div>
-            
+
             {/* TOP: Opponent's choice */}
             <div className="flex flex-col items-center gap-3 -mt-2 sm:-mt-4 md:-mt-6">
               <p className="text-sm text-gray-600 dark:text-gray-300">{t("botChoice")}:</p>
@@ -211,17 +237,17 @@ export default function PlayVsBotPage() {
                   <p className="text-4xl sm:text-5xl md:text-6xl font-bold text-green-600 dark:text-green-400">{playerScore}</p>
                   <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{t("you")}</p>
                 </div>
-                
+
                 {/* VS Separator */}
                 <div className="text-xl sm:text-2xl font-bold text-gray-400 dark:text-gray-500">VS</div>
-                
+
                 {/* Opponent Score - Right */}
                 <div className="flex flex-col items-center">
                   <p className="text-4xl sm:text-5xl md:text-6xl font-bold text-red-600 dark:text-red-400">{opponentScore}</p>
                   <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{t("bot")}</p>
                 </div>
               </div>
-              
+
               {/* Play Again Button */}
               <div className="h-10 flex items-center justify-center mt-4 gap-3">
                 <button
