@@ -91,6 +91,21 @@ function sendToUser(userId: number, payload: ServerMessage) {
   }
 }
 
+function closeUserSockets(userId: number, code: number, reason: string) {
+  const sockets = connectionsByUserId.get(userId);
+  if (!sockets) return;
+  for (const socket of sockets) {
+    if (socket.readyState === WebSocket.OPEN || socket.readyState === WebSocket.CLOSING) {
+      socket.close(code, reason);
+    }
+  }
+}
+
+function closeGameConnections(game: { playerOneId: number; playerTwoId: number }, reason: string) {
+  closeUserSockets(game.playerOneId, 1000, reason);
+  closeUserSockets(game.playerTwoId, 1000, reason);
+}
+
 function getTokenFromRequest(request: FastifyRequest) {
   const authHeader = request.headers.authorization;
   if (authHeader && authHeader.startsWith("Bearer ")) {
@@ -229,17 +244,25 @@ export async function gameWs(fastify: FastifyInstance) {
 
       if (payload.type === "createRoom") {
         if (typeof payload.roomCode !== "string") {
-          return safeSend(socket, { type: "error", message: "Invalid room code" });
+          safeSend(socket, { type: "error", message: "Invalid room code" });
+          socket.close(1000, "Invalid room code");
+          return;
         }
         const roomCode = normalizeRoomCode(payload.roomCode);
         if (!isValidRoomCode(roomCode)) {
-          return safeSend(socket, { type: "error", message: "Room code must be 3-15 characters" });
+          safeSend(socket, { type: "error", message: "Room code must be 3-15 characters" });
+          socket.close(1000, "Invalid room code");
+          return;
         }
         if (roomsByCode.has(roomCode)) {
-          return safeSend(socket, { type: "error", message: "Room already exists" });
+          safeSend(socket, { type: "error", message: "Room already exists" });
+          socket.close(1000, "Room already exists");
+          return;
         }
         if (roomCodeByHost.has(currentUserId)) {
-          return safeSend(socket, { type: "error", message: "You already created a room" });
+          safeSend(socket, { type: "error", message: "You already created a room" });
+          socket.close(1000, "Room already exists");
+          return;
         }
         roomsByCode.set(roomCode, {
           code: roomCode,
@@ -253,24 +276,34 @@ export async function gameWs(fastify: FastifyInstance) {
 
       if (payload.type === "joinRoom") {
         if (typeof payload.roomCode !== "string") {
-          return safeSend(socket, { type: "error", message: "Invalid room code" });
+          safeSend(socket, { type: "error", message: "Invalid room code" });
+          socket.close(1000, "Invalid room code");
+          return;
         }
         const roomCode = normalizeRoomCode(payload.roomCode);
         if (!isValidRoomCode(roomCode)) {
-          return safeSend(socket, { type: "error", message: "Room code must be 3-15 characters" });
+          safeSend(socket, { type: "error", message: "Room code must be 3-15 characters" });
+          socket.close(1000, "Invalid room code");
+          return;
         }
         const room = roomsByCode.get(roomCode);
         if (!room) {
-          return safeSend(socket, { type: "error", message: "Room not found" });
+          safeSend(socket, { type: "error", message: "Room not found" });
+          socket.close(1000, "Room not found");
+          return;
         }
         if (room.hostUserId === currentUserId) {
-          return safeSend(socket, { type: "error", message: "You are already hosting this room" });
+          safeSend(socket, { type: "error", message: "You are already hosting this room" });
+          socket.close(1000, "Room host already connected");
+          return;
         }
         const hostSockets = connectionsByUserId.get(room.hostUserId);
         if (!hostSockets || hostSockets.size === 0) {
           roomsByCode.delete(roomCode);
           roomCodeByHost.delete(room.hostUserId);
-          return safeSend(socket, { type: "error", message: "Host is not connected" });
+          safeSend(socket, { type: "error", message: "Host is not connected" });
+          socket.close(1000, "Host is not connected");
+          return;
         }
 
         try {
@@ -321,7 +354,9 @@ export async function gameWs(fastify: FastifyInstance) {
         } catch (error) {
           fastify.log.error({ err: error }, "Failed to create game for room");
           const detail = error instanceof Error ? error.message : "Failed to create game";
-          return safeSend(socket, { type: "error", message: detail });
+          safeSend(socket, { type: "error", message: detail });
+          socket.close(1011, detail);
+          return;
         }
       }
 
@@ -638,11 +673,33 @@ export async function gameWs(fastify: FastifyInstance) {
           };
           sendToUser(gameState.playerOneId, message);
           sendToUser(gameState.playerTwoId, message);
+          if (gameState.status === "FINISHED") {
+            closeGameConnections(
+              { playerOneId: gameState.playerOneId, playerTwoId: gameState.playerTwoId },
+              "Game finished"
+            );
+          }
           return;
         } catch (error) {
           const message =
             error instanceof Error ? error.message : "Failed to apply move";
-          return safeSend(socket, { type: "error", message });
+          if (payload && typeof payload.gameId === "number") {
+            try {
+              const game = await prisma.game.findUnique({
+                where: { id: payload.gameId },
+                select: { playerOneId: true, playerTwoId: true },
+              });
+              if (game) {
+                sendToUser(game.playerOneId, { type: "error", message });
+                sendToUser(game.playerTwoId, { type: "error", message });
+                closeGameConnections(game, message);
+                return;
+              }
+            } catch {}
+          }
+          safeSend(socket, { type: "error", message });
+          socket.close(1011, message);
+          return;
         }
       }
 

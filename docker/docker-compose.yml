@@ -4,8 +4,8 @@ services:
   front:
     image: trans_front
     build:
-      context: .
-      dockerfile: ./front.Dockerfile
+      context: ../
+      dockerfile: docker/front.Dockerfile
     hostname: ${FRONT_HOST}
     environment:
       - FRONT_HOST
@@ -23,10 +23,10 @@ services:
     ports:
       - 3000:3000
     volumes:
-      - ./backend/db/:/app/data/:z
+      - ../backend/db/:/app/data/:z
     build:
-      context: .
-      dockerfile: ./back.Dockerfile
+      context: ../
+      dockerfile: docker/back.Dockerfile
     hostname: ${BACK_HOST}
     environment:
       - HOST

@@ -84,7 +84,9 @@ export default function PlayVsBotPage() {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (!response.ok) {
-          setErrorMessage("Failed to create bot game");
+          const body = (await response.json()) as { message?: string };
+          setErrorMessage(body.message || "Failed to create bot game");
+          setGameStatus("FINISHED");
           return;
         }
         const data = (await response.json()) as { game: BotGameState; round: BotRoundState };
@@ -94,6 +96,7 @@ export default function PlayVsBotPage() {
         setOpponentScore(data.game.playerTwoScore);
       } catch (error) {
         setErrorMessage("Failed to create bot game");
+        setGameStatus("FINISHED");
       } finally {
         setIsLoading(false);
       }
@@ -137,11 +140,12 @@ export default function PlayVsBotPage() {
         },
         body: JSON.stringify({ gameId, move }),
       });
-      if (!response.ok) {
-        setErrorMessage("Failed to play round");
+      const data = (await response.json()) as BotMoveResponse & { status?: string; message?: string };
+      if (!response.ok || data.status === "error") {
+        setErrorMessage(data.message || "Failed to play round");
+        setGameStatus("FINISHED");
         return;
       }
-      const data = (await response.json()) as BotMoveResponse;
       setGameStatus(data.game.status);
       setPlayerScore(data.game.playerOneScore);
       setOpponentScore(data.game.playerTwoScore);
@@ -150,6 +154,7 @@ export default function PlayVsBotPage() {
       setPendingChoice(null);
     } catch (error) {
       setErrorMessage("Failed to play round");
+      setGameStatus("FINISHED");
     } finally {
       setIsWaitingForBot(false);
     }
