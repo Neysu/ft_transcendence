@@ -36,10 +36,10 @@ services:
       - DATABASE_URL
       - JWT_SECRET
       - COOKIES_SECRET
-    # develop:
-    #   watch:
-    #     - path: ./front.Dockerfile
-    #       action: rebuild
+    develop:
+      watch:
+        - path: ./front.Dockerfile
+          action: rebuild
     networks:
       - net
   nginx:
