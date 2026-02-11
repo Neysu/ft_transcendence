@@ -84,6 +84,7 @@ export default function PlayVsPlayersPage() {
     round: WsRoundState;
     resolved: boolean;
   } | null>(null);
+  const joinTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const choiceSize = "clamp(84px, 20vw, 160px)";
   const opponentSize = "clamp(80px, 18vw, 160px)";
 
@@ -142,6 +143,14 @@ export default function PlayVsPlayersPage() {
           ? { type: "createRoom", roomCode }
           : { type: "joinRoom", roomCode };
       ws.send(JSON.stringify(message));
+      if (mode === "join") {
+        if (joinTimeoutRef.current) {
+          clearTimeout(joinTimeoutRef.current);
+        }
+        joinTimeoutRef.current = setTimeout(() => {
+          setRoomError("Room not found");
+        }, 3000);
+      }
     };
 
     ws.onmessage = (event) => {
@@ -165,12 +174,20 @@ export default function PlayVsPlayersPage() {
       if (message.type === "roomCreated") {
         setRoomStatus(t("roomCreatedWaiting"));
         setRoomError("");
+        if (joinTimeoutRef.current) {
+          clearTimeout(joinTimeoutRef.current);
+          joinTimeoutRef.current = null;
+        }
         return;
       }
 
       if (message.type === "roomJoined" || message.type === "gameState") {
         setRoomStatus("");
         setRoomError("");
+        if (joinTimeoutRef.current) {
+          clearTimeout(joinTimeoutRef.current);
+          joinTimeoutRef.current = null;
+        }
         setPlayerChoice(null);
         setPendingChoice(null);
         setOpponentChoice(null);
@@ -198,14 +215,32 @@ export default function PlayVsPlayersPage() {
       }
     };
 
-    ws.onclose = () => {
+    ws.onclose = (event) => {
       socketRef.current = null;
+      setIsWaitingForOpponent(false);
+      if (event.reason) {
+        setRoomError(event.reason);
+      }
     };
 
     return () => {
+      if (joinTimeoutRef.current) {
+        clearTimeout(joinTimeoutRef.current);
+        joinTimeoutRef.current = null;
+      }
       ws.close();
     };
   }, [roomCode, mode]);
+
+  useEffect(() => {
+    if (!roomError || mode !== "join") {
+      return;
+    }
+    const normalized = roomError.toLowerCase();
+    if (normalized.includes("room not found")) {
+      router.push("/404");
+    }
+  }, [roomError, mode, router]);
 
   const handlePlayerChoice = (choice: Choice) => {
     if (gameStatus === "FINISHED") {
