@@ -167,6 +167,15 @@ export async function chatWs(fastify: FastifyInstance) {
         socket.close(1008, "Invalid token");
         return;
       }
+      const existingUser = await prisma.user.findUnique({
+        where: { id: payload.id },
+        select: { id: true },
+      });
+      if (!existingUser) {
+        safeSend(socket, { type: "error", message: "Invalid token" });
+        socket.close(1008, "Invalid token");
+        return;
+      }
       currentUserId = payload.id;
       friendIds = await loadFriendIds(currentUserId);
       stopFriendRefresh = scheduleFriendIdsRefresh(currentUserId, (fresh) => {

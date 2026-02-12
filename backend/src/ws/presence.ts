@@ -1,5 +1,6 @@
 import type { FastifyInstance, FastifyRequest } from "fastify";
 import WebSocket, { type RawData } from "ws";
+import { prisma } from "../lib/prisma";
 import { attachHeartbeat, loadFriendIds } from "./utils";
 import {
   getPresenceForUser,
@@ -209,6 +210,15 @@ export async function presenceWs(fastify: FastifyInstance) {
     try {
       const payload = fastify.jwt.verify(token) as { id?: number };
       if (!payload?.id || !Number.isInteger(payload.id) || payload.id <= 0) {
+        safeSend(socket, { type: "error", message: "Invalid token" });
+        socket.close(1008, "Invalid token");
+        return;
+      }
+      const existingUser = await prisma.user.findUnique({
+        where: { id: payload.id },
+        select: { id: true },
+      });
+      if (!existingUser) {
         safeSend(socket, { type: "error", message: "Invalid token" });
         socket.close(1008, "Invalid token");
         return;
