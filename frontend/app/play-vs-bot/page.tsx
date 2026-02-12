@@ -53,6 +53,26 @@ function toChoice(move: BotRoundState["playerTwoMove"]): Choice | null {
   return null;
 }
 
+function mapBotErrorMessage(
+  t: (key: string) => string,
+  message?: string,
+  fallbackKey: string = "botFailedPlayRound",
+) {
+  if (!message) return t(fallbackKey);
+  const normalized = message.trim();
+  const mapping: Record<string, string> = {
+    "Missing token": "missingAuthToken",
+    "Failed to create bot game": "botFailedCreateGame",
+    "Failed to play": "botFailedPlayRound",
+    "Game not found": "gameNotFound",
+    "Not a bot game": "botNotBotGame",
+    "Game already finished": "gameAlreadyFinished",
+    "Move already submitted": "gameMoveAlreadySubmitted",
+  };
+  const key = mapping[normalized];
+  return key ? t(key) : normalized;
+}
+
 export default function PlayVsBotPage() {
   useRequireAuth();
   const { t } = useLanguage();
@@ -92,7 +112,7 @@ export default function PlayVsBotPage() {
         });
         if (!response.ok) {
           const body = (await response.json()) as { message?: string };
-          setErrorMessage(body.message || "Failed to create bot game");
+          setErrorMessage(mapBotErrorMessage(tRef.current, body.message, "botFailedCreateGame"));
           setGameStatus("FINISHED");
           return;
         }
@@ -102,7 +122,7 @@ export default function PlayVsBotPage() {
         setPlayerScore(data.game.playerOneScore);
         setOpponentScore(data.game.playerTwoScore);
       } catch {
-        setErrorMessage("Failed to create bot game");
+        setErrorMessage(mapBotErrorMessage(tRef.current, undefined, "botFailedCreateGame"));
         setGameStatus("FINISHED");
       } finally {
         setIsLoading(false);
@@ -149,7 +169,7 @@ export default function PlayVsBotPage() {
       });
       const data = (await response.json()) as BotMoveResponse & { status?: string; message?: string };
       if (!response.ok || data.status === "error") {
-        setErrorMessage(data.message || "Failed to play round");
+        setErrorMessage(mapBotErrorMessage(t, data.message, "botFailedPlayRound"));
         setGameStatus("FINISHED");
         return;
       }
@@ -160,7 +180,7 @@ export default function PlayVsBotPage() {
       setOpponentChoice(toChoice(data.round.playerTwoMove));
       setPendingChoice(null);
     } catch {
-      setErrorMessage("Failed to play round");
+      setErrorMessage(mapBotErrorMessage(t, undefined, "botFailedPlayRound"));
       setGameStatus("FINISHED");
     } finally {
       setIsWaitingForBot(false);
@@ -182,7 +202,8 @@ export default function PlayVsBotPage() {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (!response.ok) {
-          setErrorMessage("Failed to create bot game");
+          const body = (await response.json().catch(() => null)) as { message?: string } | null;
+          setErrorMessage(mapBotErrorMessage(t, body?.message, "botFailedCreateGame"));
           return;
         }
         const data = (await response.json()) as { game: BotGameState; round: BotRoundState };
@@ -191,7 +212,7 @@ export default function PlayVsBotPage() {
         setPlayerScore(data.game.playerOneScore);
         setOpponentScore(data.game.playerTwoScore);
       } catch {
-        setErrorMessage("Failed to create bot game");
+        setErrorMessage(mapBotErrorMessage(t, undefined, "botFailedCreateGame"));
       } finally {
         setIsLoading(false);
       }

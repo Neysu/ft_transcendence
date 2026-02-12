@@ -5,12 +5,125 @@ import { RPSGame, type Move } from "../../../lib/game/RPS";
 import { parseOrReply } from "../../../lib/api/validation";
 import { authMiddleware } from "../../../middleware/auth";
 import { BotMoveSchema } from "../../../lib/api/schemasZod";
+import { getUserMoveStats } from "../../../lib/api/botMoveStats";
 
 type UserTx = Parameters<Parameters<typeof prisma.$transaction>[0]>[0];
 
 const BOT_USERNAME = "rps_bot";
 const BOT_EMAIL = "rps_bot@local";
 const BOT_PASSWORD = "rps_bot";
+const BOT_MOVES: Move[] = ["ROCK", "PAPER", "SCISSORS"];
+const BOT_LEARNING_SAMPLE_SIZE = 20;
+const BOT_MAX_MOVE_CHANCE = 50;
+
+class BotMoveClientError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "BotMoveClientError";
+  }
+}
+
+function pickWeightedMove(weights: Record<Move, number>): Move {
+  const sanitized: Record<Move, number> = {
+    ROCK: Math.max(0, Number.isFinite(weights.ROCK) ? weights.ROCK : 0),
+    PAPER: Math.max(0, Number.isFinite(weights.PAPER) ? weights.PAPER : 0),
+    SCISSORS: Math.max(0, Number.isFinite(weights.SCISSORS) ? weights.SCISSORS : 0),
+  };
+  const total = sanitized.ROCK + sanitized.PAPER + sanitized.SCISSORS;
+  if (total <= 0) {
+    return RPSGame.getWeightedAIMove();
+  }
+
+  let roll = Math.random() * total;
+  if (roll < sanitized.ROCK) return "ROCK";
+  roll -= sanitized.ROCK;
+  if (roll < sanitized.PAPER) return "PAPER";
+  return "SCISSORS";
+}
+
+function normalizeToPercentages(weights: Record<Move, number>): Record<Move, number> {
+  const sanitized: Record<Move, number> = {
+    ROCK: Math.max(0, Number.isFinite(weights.ROCK) ? weights.ROCK : 0),
+    PAPER: Math.max(0, Number.isFinite(weights.PAPER) ? weights.PAPER : 0),
+    SCISSORS: Math.max(0, Number.isFinite(weights.SCISSORS) ? weights.SCISSORS : 0),
+  };
+  const total = BOT_MOVES.reduce((acc, move) => acc + sanitized[move], 0);
+  if (total <= 0) {
+    return { ROCK: 100 / 3, PAPER: 100 / 3, SCISSORS: 100 / 3 };
+  }
+  return {
+    ROCK: (sanitized.ROCK / total) * 100,
+    PAPER: (sanitized.PAPER / total) * 100,
+    SCISSORS: (sanitized.SCISSORS / total) * 100,
+  };
+}
+
+function capPercentages(percentages: Record<Move, number>, maxChance: number): Record<Move, number> {
+  const capped: Record<Move, number> = { ...percentages };
+
+  for (let i = 0; i < 6; i += 1) {
+    let excess = 0;
+    for (const move of BOT_MOVES) {
+      if (capped[move] > maxChance) {
+        excess += capped[move] - maxChance;
+        capped[move] = maxChance;
+      }
+    }
+
+    if (excess <= 0.0001) break;
+
+    const eligible = BOT_MOVES.filter((move) => capped[move] < maxChance - 0.0001);
+    if (eligible.length === 0) break;
+
+    const eligibleTotal = eligible.reduce((acc, move) => acc + capped[move], 0);
+    if (eligibleTotal <= 0.0001) {
+      const share = excess / eligible.length;
+      for (const move of eligible) {
+        capped[move] += share;
+      }
+      continue;
+    }
+
+    for (const move of eligible) {
+      capped[move] += excess * (capped[move] / eligibleTotal);
+    }
+  }
+
+  return capped;
+}
+
+async function getAdaptiveBotMove(userId: number, botId: number): Promise<Move> {
+  const stats = await getUserMoveStats(userId, { excludeUserId: botId });
+
+  const userByMove: Record<Move, number> = { ROCK: 0, PAPER: 0, SCISSORS: 0 };
+  const avgByMove: Record<Move, number> = { ROCK: 33.33, PAPER: 33.33, SCISSORS: 33.33 };
+
+  for (const row of stats.userTable) userByMove[row.move] = row.percentage;
+  const averageTotalMoves = stats.averageTable.reduce((acc, row) => acc + row.count, 0);
+  if (averageTotalMoves > 0) {
+    for (const row of stats.averageTable) avgByMove[row.move] = row.percentage;
+  }
+
+  const userTotalMoves = stats.userTable.reduce((acc, row) => acc + row.count, 0);
+  const confidence = Math.min(1, userTotalMoves / BOT_LEARNING_SAMPLE_SIZE);
+
+  const predictedOpponent: Record<Move, number> = {
+    ROCK: userByMove.ROCK * confidence + avgByMove.ROCK * (1 - confidence),
+    PAPER: userByMove.PAPER * confidence + avgByMove.PAPER * (1 - confidence),
+    SCISSORS: userByMove.SCISSORS * confidence + avgByMove.SCISSORS * (1 - confidence),
+  };
+
+  // Bot move weights are mapped to the move they beat.
+  const botWeights: Record<Move, number> = {
+    ROCK: predictedOpponent.SCISSORS + 5,
+    PAPER: predictedOpponent.ROCK + 5,
+    SCISSORS: predictedOpponent.PAPER + 5,
+  };
+
+  const normalized = normalizeToPercentages(botWeights);
+  const capped = capPercentages(normalized, BOT_MAX_MOVE_CHANCE);
+  return pickWeightedMove(capped);
+}
 
 type GameState = {
   id: number;
@@ -193,13 +306,13 @@ export async function botGameRoute(fastify: FastifyInstance) {
               },
             });
             if (!game) {
-              throw new Error("Game not found");
+              throw new BotMoveClientError("Game not found");
             }
             if (game.playerOneId !== authUserId || game.playerTwoId !== botId) {
-              throw new Error("Not a bot game");
+              throw new BotMoveClientError("Not a bot game");
             }
             if (game.status === "FINISHED") {
-              throw new Error("Game already finished");
+              throw new BotMoveClientError("Game already finished");
             }
 
             let round = await tx.round.findFirst({
@@ -226,10 +339,10 @@ export async function botGameRoute(fastify: FastifyInstance) {
               });
             }
             if (round.playerOneMove) {
-              throw new Error("Move already submitted");
+              throw new BotMoveClientError("Move already submitted");
             }
 
-            const botMove = RPSGame.getWeightedAIMove();
+            const botMove = await getAdaptiveBotMove(authUserId, botId);
             const updatedRound = await tx.round.update({
               where: { id: round.id },
               data: { playerOneMove: body.move, playerTwoMove: botMove },
@@ -339,9 +452,13 @@ export async function botGameRoute(fastify: FastifyInstance) {
             nextRound: result.nextRound ? toRoundState(result.nextRound) : null,
           };
         } catch (error) {
-          const message = error instanceof Error ? error.message : "Failed to play";
-          reply.code(400);
-          return { status: "error", message };
+          if (error instanceof BotMoveClientError) {
+            reply.code(400);
+            return { status: "error", message: error.message };
+          }
+          fastify.log.error({ err: error }, "Failed to play bot round");
+          reply.code(500);
+          return { status: "error", message: "Failed to play" };
         }
       }
     );

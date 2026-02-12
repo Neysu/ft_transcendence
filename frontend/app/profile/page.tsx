@@ -85,7 +85,7 @@ export default function MyProfilePage() {
       router.back();
       return;
     }
-    router.replace("/friends");
+    router.push("/friends");
   };
 
   const handleLogout = () => {
@@ -281,7 +281,7 @@ export default function MyProfilePage() {
             />
 
             <ProfileActionsCard title={t("profileActions")} className="sm:grid-cols-1">
-              <ButtonBasic1 variant="secondary" onClick={() => router.replace("/friends")} className="!w-full !h-12">
+              <ButtonBasic1 variant="secondary" onClick={() => router.push("/friends")} className="!w-full !h-12">
                 {t("friendsList")}
               </ButtonBasic1>
               <ButtonBasic1 variant="secondary" onClick={handleLogout} className="!w-full !h-12">

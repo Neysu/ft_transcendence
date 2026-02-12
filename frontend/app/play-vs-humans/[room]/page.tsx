@@ -63,6 +63,43 @@ function getWsUrl(token: string) {
   return base.toString();
 }
 
+function mapGameWsErrorMessage(t: (key: string) => string, message?: string) {
+  if (!message) return "";
+  const normalized = message.trim();
+  const mapping: Record<string, string> = {
+    "Missing token": "missingAuthToken",
+    "Invalid token": "gameWsInvalidToken",
+    "Message too large": "gameWsMessageTooLarge",
+    "Invalid JSON": "gameWsInvalidJson",
+    "Not registered": "gameWsNotRegistered",
+    "Invalid room code": "gameInvalidRoomCode",
+    "Room code must be 3-15 characters": "gameRoomCodeLength",
+    "Room already exists": "gameRoomAlreadyExists",
+    "You already created a room": "gameRoomAlreadyCreated",
+    "Room not found": "roomNotFound",
+    "You are already hosting this room": "gameAlreadyHostingRoom",
+    "Room host already connected": "gameAlreadyHostingRoom",
+    "Host is not connected": "gameHostNotConnected",
+    "Invalid opponentId": "gameInvalidOpponentId",
+    "Cannot play against yourself": "gameCannotPlayYourself",
+    "Opponent not found": "gameOpponentNotFound",
+    "Invalid gameId": "gameInvalidGameId",
+    "Game not found": "gameNotFound",
+    "Not a player in this game": "gameNotPlayer",
+    "No round found": "gameNoRoundFound",
+    "Invalid move": "gameInvalidMove",
+    "Game already finished": "gameAlreadyFinished",
+    "Move already submitted": "gameMoveAlreadySubmitted",
+    "Invalid round moves": "gameInvalidRoundMoves",
+    "Failed to create game": "gameFailedCreate",
+    "Failed to apply move": "gameFailedApplyMove",
+    "Unknown message type": "gameUnknownMessageType",
+    "Game finished": "gameFinished",
+  };
+  const key = mapping[normalized];
+  return key ? t(key) : normalized;
+}
+
 export default function PlayVsPlayersPage() {
   useRequireAuth();
   const { t } = useLanguage();
@@ -212,7 +249,7 @@ export default function PlayVsPlayersPage() {
       }
 
       if (message.type === "error") {
-        setRoomError(message.message);
+        setRoomError(mapGameWsErrorMessage(t, message.message));
         setIsWaitingForOpponent(false);
         setPendingChoice(null);
       }
@@ -222,7 +259,7 @@ export default function PlayVsPlayersPage() {
       socketRef.current = null;
       setIsWaitingForOpponent(false);
       if (event.reason) {
-        setRoomError(event.reason);
+        setRoomError(mapGameWsErrorMessage(t, event.reason));
       }
     };
 
