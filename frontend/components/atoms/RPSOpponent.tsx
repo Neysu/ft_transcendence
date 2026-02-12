@@ -1,5 +1,6 @@
 "use client";
 import React from "react";
+import Image from "next/image";
 
 export interface RPSOpponentProps {
   size?: number | string;
@@ -60,7 +61,7 @@ export const RPSOpponent: React.FC<RPSOpponentProps> = ({
 
   return (
     <div
-      className={`rounded-full border-4 ${borderColor} ${bgColor} shadow-lg flex items-center justify-center overflow-hidden ${isLoading ? "animate-pulse" : ""}`}
+      className={`relative rounded-full border-4 ${borderColor} ${bgColor} shadow-lg flex items-center justify-center overflow-hidden ${isLoading ? "animate-pulse" : ""}`}
       style={{ width: size, height: size }}
     >
       {isLoading ? (
@@ -68,12 +69,13 @@ export const RPSOpponent: React.FC<RPSOpponentProps> = ({
         <div className="text-gray-400 dark:text-gray-600 text-sm">...</div>
       ) : opponentChoice ? (
         // BACKEND ANSWER RECEIVED: Display opponent's choice image
-        <img
+        <Image
           src={imageMap[opponentChoice]}
           alt={opponentChoice}
+          fill
+          sizes="(max-width: 640px) 80px, (max-width: 1024px) 120px, 160px"
           draggable={false}
-          className="object-cover w-full h-full"
-          onDragStart={(event) => event.preventDefault()}
+          className="object-cover"
         />
       ) : (
         // NO CHOICE YET: Empty state before game starts

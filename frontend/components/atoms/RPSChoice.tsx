@@ -1,5 +1,6 @@
 "use client";
 import React from "react";
+import Image from "next/image";
 
 export type Choice = "rock" | "paper" | "scissors";
 
@@ -64,16 +65,17 @@ export const RPSChoice: React.FC<RPSChoiceProps> = ({
   return (
     <button
       onClick={handleClick}
-      className={`rounded-full overflow-hidden border-4 ${borderColor} ${bgColor} shadow-lg hover:scale-110 active:scale-95 transition-transform duration-200 focus:outline-none focus:ring-4 focus:ring-offset-2`}
+      className={`relative rounded-full overflow-hidden border-4 ${borderColor} ${bgColor} shadow-lg hover:scale-110 active:scale-95 transition-transform duration-200 focus:outline-none focus:ring-4 focus:ring-offset-2`}
       style={{ width: size, height: size }}
       title={choice.charAt(0).toUpperCase() + choice.slice(1)}
     >
-      <img
+      <Image
         src={imageMap[choice]}
         alt={choice}
+        fill
+        sizes="(max-width: 640px) 84px, (max-width: 1024px) 120px, 160px"
         draggable={false}
-        className="object-cover w-full h-full"
-        onDragStart={(event) => event.preventDefault()}
+        className="object-cover"
       />
     </button>
   );

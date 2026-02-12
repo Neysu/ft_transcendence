@@ -101,6 +101,11 @@ export default function SignUp() {
       localStorage.setItem("userId", String(loginData.id));
       localStorage.setItem("username", loginData.username);
       window.dispatchEvent(new Event(AUTH_CHANGED_EVENT));
+      [1200, 2600, 4600].forEach((delayMs) => {
+        window.setTimeout(() => {
+          window.dispatchEvent(new Event(AUTH_CHANGED_EVENT));
+        }, delayMs);
+      });
 
       // Redirect to home page
       router.push("/");
