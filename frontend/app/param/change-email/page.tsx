@@ -74,7 +74,11 @@ export default function ChangeEmailPage() {
       }, { defaultMessage: "Failed to update email" });
 
       updateMe({ email: newEmail });
-      router.replace("/param");
+      if (typeof window !== "undefined" && window.history.length > 1) {
+        router.back();
+      } else {
+        router.replace("/param");
+      }
     } catch (error) {
       console.error("Error updating email:", error);
       if (error instanceof TypeError && error.message.includes("fetch")) {

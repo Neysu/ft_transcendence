@@ -47,6 +47,29 @@
   --btn-secondary-text: #3A0766;
   --btn-secondary-border: #3A0766;
   --btn-secondary-bg-hover: #BEBCA1;
+  --profile-shell-orb-1: rgba(167, 243, 208, 0.6);
+  --profile-shell-orb-2: rgba(217, 249, 157, 0.4);
+  --profile-shell-top-overlay: linear-gradient(
+    to right,
+    rgba(255, 255, 255, 0.45),
+    rgba(255, 255, 255, 0.15),
+    rgba(236, 253, 245, 0.35)
+  );
+  --profile-identity-card-border: rgba(255, 255, 255, 0.65);
+  --profile-identity-card-bg: rgba(255, 255, 255, 0.62);
+  --profile-identity-card-shadow: rgba(167, 243, 208, 0.2);
+  --profile-identity-banner: linear-gradient(
+    to right,
+    rgba(52, 211, 153, 0.8),
+    rgba(217, 249, 157, 0.6),
+    rgba(209, 250, 229, 0.65)
+  );
+  --profile-identity-badge-bg: rgba(209, 250, 229, 0.9);
+  --profile-identity-badge-text: rgb(6, 78, 59);
+  --profile-identity-avatar-border: #ffffff;
+  --profile-bubble-bg: rgba(255, 255, 255, 0.95);
+  --profile-bubble-border: rgb(16, 185, 129);
+  --profile-bubble-text: rgb(6, 95, 70);
 }
 
 /* Theme 2: Purple theme (activated via data-theme="purple") */
@@ -65,6 +88,29 @@
   --btn-secondary-text: #3A0766;
   --btn-secondary-border: #3A0766;
   --btn-secondary-bg-hover: #BEBCA1;
+  --profile-shell-orb-1: rgba(196, 181, 253, 0.6);
+  --profile-shell-orb-2: rgba(245, 208, 254, 0.45);
+  --profile-shell-top-overlay: linear-gradient(
+    to right,
+    rgba(221, 214, 254, 0.45),
+    rgba(255, 255, 255, 0.35),
+    rgba(245, 208, 254, 0.35)
+  );
+  --profile-identity-card-border: rgba(196, 181, 253, 0.55);
+  --profile-identity-card-bg: rgba(255, 255, 255, 0.78);
+  --profile-identity-card-shadow: rgba(196, 181, 253, 0.2);
+  --profile-identity-banner: linear-gradient(
+    to right,
+    rgba(196, 181, 253, 0.8),
+    rgba(245, 208, 254, 0.65),
+    rgba(199, 210, 254, 0.65)
+  );
+  --profile-identity-badge-bg: rgba(237, 233, 254, 0.9);
+  --profile-identity-badge-text: rgb(76, 29, 149);
+  --profile-identity-avatar-border: rgb(221, 214, 254);
+  --profile-bubble-bg: rgba(255, 255, 255, 0.95);
+  --profile-bubble-border: rgb(139, 92, 246);
+  --profile-bubble-text: rgb(76, 29, 149);
 }
 
 /* Map CSS variables to Tailwind theme tokens */

@@ -2,7 +2,7 @@
 import React from "react";
 import { useLanguage } from "@/components/LanguageProvider";
 
-export interface ButtonSubmiteProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {}
+export type ButtonSubmiteProps = React.ButtonHTMLAttributes<HTMLButtonElement>;
 
 /**
  * Atom: ButtonSubmite

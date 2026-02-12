@@ -1,7 +1,7 @@
 "use client";
 import React from "react";
 
-export interface ButtonCircleBackProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {}
+export type ButtonCircleBackProps = React.ButtonHTMLAttributes<HTMLButtonElement>;
 
 /**
  * Atom: ButtonCircleBack

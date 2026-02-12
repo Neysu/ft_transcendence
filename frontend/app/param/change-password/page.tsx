@@ -84,7 +84,11 @@ export default function ChangePasswordPage() {
           401: t("currentPasswordIncorrect") || "Current password is incorrect",
         },
       });
-      router.replace("/param");
+      if (typeof window !== "undefined" && window.history.length > 1) {
+        router.back();
+      } else {
+        router.replace("/param");
+      }
     } catch (error) {
       console.error("Error updating password:", error);
       if (error instanceof TypeError && error.message.includes("fetch")) {

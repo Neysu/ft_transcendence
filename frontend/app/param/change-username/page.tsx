@@ -74,7 +74,11 @@ export default function ChangeUsernamePage() {
       }, { defaultMessage: "Failed to update username" });
 
       updateMe({ username: newUsername });
-      router.replace("/param");
+      if (typeof window !== "undefined" && window.history.length > 1) {
+        router.back();
+      } else {
+        router.replace("/param");
+      }
     } catch (error) {
       console.error("Error updating username:", error);
       if (error instanceof TypeError && error.message.includes("fetch")) {

@@ -1,7 +1,6 @@
 "use client";
 
 import { useLanguage } from "@/components/LanguageProvider";
-import { ButtonBasic1 } from "@/components/atoms/Button";
 import { ButtonCircleBack } from "@/components/atoms/ButtonCircleBack";
 import { ButtonSubmite } from "@/components/atoms/ButtonSubmite";
 import { TextInput } from "@/components/atoms/TextInput";

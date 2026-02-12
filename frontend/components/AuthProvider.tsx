@@ -10,6 +10,9 @@ type Me = {
   username: string;
   email: string;
   profileImage: string | null;
+  profileText: string | null;
+  gamesPlayed: number;
+  gamesWon: number;
 };
 
 interface AuthContextType {
@@ -27,6 +30,12 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [me, setMe] = useState<Me | null>(null);
   const [isAuthLoading, setIsAuthLoading] = useState(true);
+  const clearStoredAuth = useCallback(() => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("accessToken");
+    localStorage.removeItem("userId");
+    localStorage.removeItem("username");
+  }, []);
 
   const refreshMe = useCallback(async () => {
     setIsAuthLoading(true);
@@ -59,28 +68,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           username: data.username,
           email: data.email,
           profileImage: data.profileImage ?? null,
+          profileText: data.profileText ?? null,
+          gamesPlayed: typeof data.gamesPlayed === "number" ? data.gamesPlayed : 0,
+          gamesWon: typeof data.gamesWon === "number" ? data.gamesWon : 0,
         });
       } else {
         setMe(null);
       }
     } catch (error) {
       if (error instanceof FetchJsonError && (error.status === 401 || error.status === 403)) {
+        clearStoredAuth();
         setMe(null);
       }
     } finally {
       setIsAuthLoading(false);
     }
-  }, []);
+  }, [clearStoredAuth]);
 
   const logout = useCallback(() => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("accessToken");
-    localStorage.removeItem("userId");
-    localStorage.removeItem("username");
+    clearStoredAuth();
     setMe(null);
     setIsAuthLoading(false);
     window.dispatchEvent(new Event(AUTH_CHANGED_EVENT));
-  }, []);
+  }, [clearStoredAuth]);
 
   const updateMe = useCallback((patch: Partial<Me>) => {
     setMe((prev) => {

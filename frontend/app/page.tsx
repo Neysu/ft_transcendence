@@ -1,10 +1,9 @@
 "use client";
 
 import { useLanguage } from "@/components/LanguageProvider";
-import { useAuth } from "@/components/AuthProvider";
-import { ButtonBasic1 } from "@/components/atoms/Button";
 import { ButtonLarge } from "@/components/atoms/ButtonLarge";
 import { useRouter } from "next/navigation";
+import { useEffect, useSyncExternalStore } from "react";
 
 /**
  * Home Page Component
@@ -12,46 +11,53 @@ import { useRouter } from "next/navigation";
  * The main page with game mode selection and friends list access.
  */
 export default function Home() {
-  // Access translation function from language context
   const { t } = useLanguage();
-  const { logout } = useAuth();
   const router = useRouter();
+  const hasProfileNotFoundError = useSyncExternalStore(
+    () => () => {},
+    () => {
+      if (typeof window === "undefined") {
+        return false;
+      }
+      return new URLSearchParams(window.location.search).get("error") === "profile-not-found";
+    },
+    () => false,
+  );
 
-  const handleLogout = () => {
-    logout();
-    // Redirect to landing page
-    router.push("/landing/signin");
-  };
+  useEffect(() => {
+    if (!hasProfileNotFoundError || typeof window === "undefined") {
+      return;
+    }
+
+    const timer = window.setTimeout(() => {
+      router.replace("/", { scroll: false });
+    }, 3200);
+
+    return () => {
+      window.clearTimeout(timer);
+    };
+  }, [hasProfileNotFoundError, router]);
 
   return (
     <>
-      {/* Main content area centered higher on page */}
+      {hasProfileNotFoundError ? (
+        <div className="pointer-events-none fixed top-16 right-4 z-[60] max-w-[min(92vw,360px)] rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-base font-semibold text-red-700 shadow-lg">
+          {t("userNotFound")}
+        </div>
+      ) : null}
+
       <main className="min-h-[calc(100vh-160px)] flex flex-col items-center justify-center gap-12 px-4 -mt-16">
-        {/* Game mode buttons container */}
         <div className="flex flex-col lg:flex-row gap-12 items-center justify-center">
-          {/* Play vs Bots button */}
           <ButtonLarge onClick={() => router.push("/play-vs-bot")}>
             {t("playVsBots")}
           </ButtonLarge>
 
-          {/* Play vs Humans button */}
           <ButtonLarge onClick={() => router.push("/play-vs-humans")}>
             {t("playVsHumans")}
           </ButtonLarge>
         </div>
 
-        {/* Friends list button centered below */}
-        <ButtonBasic1 onClick={() => (router.push("/friends"), console.log("Friends List"))} className="w-64! h-20! text-xl">
-          {t("friendsList")}
-        </ButtonBasic1>
       </main>
-
-      {/* Logout button positioned at bottom right */}
-      <div className="fixed bottom-4 right-4 z-40">
-        <ButtonBasic1 onClick={handleLogout} className="w-36! h-11! text-base">
-          {t("logout")}
-        </ButtonBasic1>
-      </div>
     </>
   );
 }
