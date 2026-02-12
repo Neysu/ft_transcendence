@@ -11,6 +11,8 @@ ENV DATABASE_URL="file:/app/data/database.sqlite"
 
 EXPOSE 3000
 
-RUN bun prisma generate
+COPY docker/back_entrypoint.sh /usr/bin/entrypoint.sh
+RUN chmod +x /usr/bin/entrypoint.sh
 
-CMD bun prisma migrate deploy && bun src/server.ts
+ENTRYPOINT [ "/usr/bin/entrypoint.sh" ]
+CMD [ "bun", "run", "src/server.ts" ]
