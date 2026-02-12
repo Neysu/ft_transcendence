@@ -4,7 +4,6 @@ import "./globals.css";
 import { Geist, Geist_Mono, Inter } from "next/font/google";
 import { LanguageProvider } from "@/components/LanguageProvider";
 import { AuthProvider } from "@/components/AuthProvider";
-import { AuthGuard } from "@/components/AuthGuard";
 import PresenceSocket from "@/components/PresenceSocket";
 import { ThemeSync } from "@/components/ThemeSync";
 import ThemeToggle from "@/components/ThemeToggle";
@@ -75,7 +74,7 @@ export default function RootLayout({
                   <ProfilePicButton onClick={() => router.push("/profile")} />
                 )}
               </div>
-              <AuthGuard>{children}</AuthGuard>
+              {children}
               {!hideExtraInfo && <ExtraInfo />}
             </LanguageProvider>
           </AuthProvider>
