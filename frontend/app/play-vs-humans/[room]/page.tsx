@@ -95,6 +95,13 @@ export default function PlayVsPlayersPage() {
         ? decodeURIComponent(params.room[0] ?? "")
         : "";
   const mode = searchParams.get("mode") === "create" ? "create" : "join";
+  const authToken = getToken();
+  const blockingRoomError = !authToken
+    ? t("missingAuthToken")
+    : !roomCode
+      ? t("missingRoomCode")
+      : "";
+  const displayedRoomError = blockingRoomError || roomError;
 
   const applySnapshot = (game: WsGameState, round: WsRoundState, resolved: boolean) => {
     const currentUserId = currentUserIdRef.current;
@@ -123,21 +130,15 @@ export default function PlayVsPlayersPage() {
   };
 
   useEffect(() => {
-    const token = getToken();
-    if (!token) {
-      setRoomError(t("missingAuthToken"));
-      return;
-    }
-    if (!roomCode) {
-      setRoomError(t("missingRoomCode"));
+    if (blockingRoomError) {
       return;
     }
 
-    setRoomStatus(mode === "create" ? t("creatingRoom") : t("joiningRoom"));
-    const ws = new WebSocket(getWsUrl(token), token);
+    const ws = new WebSocket(getWsUrl(authToken), authToken);
     socketRef.current = ws;
 
     ws.onopen = () => {
+      setRoomStatus(mode === "create" ? t("creatingRoom") : t("joiningRoom"));
       const message =
         mode === "create"
           ? { type: "createRoom", roomCode }
@@ -148,7 +149,7 @@ export default function PlayVsPlayersPage() {
           clearTimeout(joinTimeoutRef.current);
         }
         joinTimeoutRef.current = setTimeout(() => {
-          setRoomError("Room not found");
+          setRoomError(t("roomNotFound"));
         }, 3000);
       }
     };
@@ -230,17 +231,20 @@ export default function PlayVsPlayersPage() {
       }
       ws.close();
     };
-  }, [roomCode, mode]);
+  }, [authToken, blockingRoomError, mode, roomCode, t]);
 
   useEffect(() => {
-    if (!roomError || mode !== "join") {
+    if (!displayedRoomError || mode !== "join") {
       return;
     }
-    const normalized = roomError.toLowerCase();
-    if (normalized.includes("room not found")) {
+    const normalized = displayedRoomError.toLowerCase();
+    if (
+      normalized.includes("room not found") ||
+      normalized.includes(t("roomNotFound").toLowerCase())
+    ) {
       router.push("/404");
     }
-  }, [roomError, mode, router]);
+  }, [displayedRoomError, mode, router, t]);
 
   const handlePlayerChoice = (choice: Choice) => {
     if (gameStatus === "FINISHED") {
@@ -302,8 +306,8 @@ export default function PlayVsPlayersPage() {
               {roomStatus ? (
                 <p className="text-xs text-gray-500 dark:text-gray-400">{roomStatus}</p>
               ) : null}
-              {roomError ? (
-                <p className="text-xs text-red-500">{roomError}</p>
+              {displayedRoomError ? (
+                <p className="text-xs text-red-500">{displayedRoomError}</p>
               ) : null}
               {gameStatus === "FINISHED" ? (
                 <p className="text-xs text-green-600 dark:text-green-400">{t("gameFinished")}</p>

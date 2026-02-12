@@ -71,7 +71,7 @@ export default function PlayVsBotPage() {
   useEffect(() => {
     const token = getToken();
     if (!token) {
-      setErrorMessage("Missing auth token");
+      setErrorMessage(t("missingAuthToken"));
       return;
     }
 
@@ -124,7 +124,7 @@ export default function PlayVsBotPage() {
     }
     const token = getToken();
     if (!token) {
-      setErrorMessage("Missing auth token");
+      setErrorMessage(t("missingAuthToken"));
       return;
     }
 
@@ -165,7 +165,7 @@ export default function PlayVsBotPage() {
       // Game is over — start a brand-new game
       const token = getToken();
       if (!token) {
-        setErrorMessage("Missing auth token");
+        setErrorMessage(t("missingAuthToken"));
         return;
       }
       try {
@@ -213,13 +213,13 @@ export default function PlayVsBotPage() {
             <div className="flex flex-col items-center gap-1 -mt-1">
               <h1 className="text-lg sm:text-xl font-bold text-center">{t("playVsBots")}</h1>
               {isLoading ? (
-                <p className="text-xs text-gray-500 dark:text-gray-400">Creating game...</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">{t("creatingGame")}</p>
               ) : null}
               {errorMessage ? (
                 <p className="text-xs text-red-500">{errorMessage}</p>
               ) : null}
               {gameStatus === "FINISHED" ? (
-                <p className="text-xs text-green-600 dark:text-green-400">Game finished</p>
+                <p className="text-xs text-green-600 dark:text-green-400">{t("gameFinished")}</p>
               ) : null}
             </div>
 
@@ -244,7 +244,7 @@ export default function PlayVsBotPage() {
                 </div>
 
                 {/* VS Separator */}
-                <div className="text-xl sm:text-2xl font-bold text-gray-400 dark:text-gray-500">VS</div>
+                <div className="text-xl sm:text-2xl font-bold text-gray-400 dark:text-gray-500">{t("vs")}</div>
 
                 {/* Opponent Score - Right */}
                 <div className="flex flex-col items-center">
@@ -261,7 +261,7 @@ export default function PlayVsBotPage() {
                     pendingChoice && !playerChoice ? "opacity-100" : "opacity-0 pointer-events-none"
                   }`}
                 >
-                  Validate
+                  {t("validate")}
                 </button>
                 <button
                   onClick={handlePlayAgain}
