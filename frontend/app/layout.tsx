@@ -1,8 +1,6 @@
 "use client";
 
-// Import Next.js types and utilities
 import "./globals.css";
-// import "./bg-random.js";
 import { Geist, Geist_Mono, Inter } from "next/font/google";
 import { LanguageProvider } from "@/components/LanguageProvider";
 import { AuthProvider } from "@/components/AuthProvider";
@@ -17,20 +15,15 @@ import { usePathname, useRouter } from "next/navigation";
 
 const inter = Inter({subsets:['latin'],variable:'--font-sans'});
 
-
-// Configure the Geist Sans font with CSS variable
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
 });
 
-// Configure the Geist Mono font with CSS variable
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
 });
-
-// Root layout component that wraps all pages in the application
 
 export default function RootLayout({
   children,
@@ -45,6 +38,7 @@ export default function RootLayout({
     <html lang="en" className={inter.variable} suppressHydrationWarning>
       <head>
         <title>ft_transcendence</title>
+        <link rel="icon" href="/icon.svg" type="image/svg+xml" />
         <meta
           name="description"
           content="ft_transcendence: jeu Pong en ligne avec amis, chat et profil utilisateur."
@@ -66,21 +60,18 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased text-foreground min-h-screen`}
         style={{ position: "relative", minHeight: "100vh" }}
       >
-        {/* Optional: background div for custom backgrounds */}
-        {/* <div className="fixed inset-0 z-0 bg-gradient-to-br from-gray-900 to-gray-700 opacity-60 pointer-events-none" /> */}
         <ThemeSync>
           <AuthProvider>
             <PresenceSocket />
             <LanguageProvider>
               <Logo />
-              {/* Fixed position toggles at top right */}
               <div style={{ position: "fixed", top: 15, right: 16, zIndex: 50, display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 12 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                   <ThemeToggle />
                   <LanguageToggle />
                 </div>
                 {!hideProfileButton && (
-                  <ProfilePicButton onClick={() => router.push("/param")} />
+                  <ProfilePicButton onClick={() => router.push("/profile")} />
                 )}
               </div>
               {children}

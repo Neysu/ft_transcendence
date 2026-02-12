@@ -635,7 +635,13 @@ export default function FriendsPage() {
                           />
                         </div>
                         <div>
-                          <p className="text-xl md:text-2xl font-semibold leading-tight">{friend.name}</p>
+                          <button
+                            type="button"
+                            onClick={() => router.push(`/profile/${encodeURIComponent(friend.name)}`)}
+                            className="text-xl md:text-2xl font-semibold leading-tight text-left hover:underline"
+                          >
+                            {friend.name}
+                          </button>
                           <p className="text-sm text-foreground/70">
                             {friend.lastSeen ? `${t("lastSeen")} ${friend.lastSeen}` : ""}
                           </p>
