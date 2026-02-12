@@ -4,6 +4,7 @@ import { useLanguage } from "@/components/LanguageProvider";
 import { ButtonLarge } from "@/components/atoms/ButtonLarge";
 import { useRouter } from "next/navigation";
 import { useEffect, useSyncExternalStore } from "react";
+import { useRequireAuth } from "@/hooks/useRequireAuth";
 
 /**
  * Home Page Component
@@ -13,6 +14,7 @@ import { useEffect, useSyncExternalStore } from "react";
 export default function Home() {
   const { t } = useLanguage();
   const router = useRouter();
+  useRequireAuth();
   const hasProfileNotFoundError = useSyncExternalStore(
     () => () => {},
     () => {

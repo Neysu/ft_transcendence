@@ -8,6 +8,7 @@ import { CardPanelSolid } from "@/components/molecules/CardPanelSolid";
 import { useLanguage } from "@/components/LanguageProvider";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+import { useRequireAuth } from "@/hooks/useRequireAuth";
 
 type BotGameState = {
   id: number;
@@ -53,6 +54,7 @@ function toChoice(move: BotRoundState["playerTwoMove"]): Choice | null {
 }
 
 export default function PlayVsBotPage() {
+  useRequireAuth();
   const { t } = useLanguage();
   const tRef = useRef(t);
   const router = useRouter();

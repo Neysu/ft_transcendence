@@ -7,6 +7,7 @@ import { CardPanel } from "@/components/molecules/CardPanel";
 import { CardPanelSolid } from "@/components/molecules/CardPanelSolid";
 import { useLanguage } from "@/components/LanguageProvider";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
+import { useRequireAuth } from "@/hooks/useRequireAuth";
 import { useEffect, useRef, useState } from "react";
 
 type WsGameState = {
@@ -63,6 +64,7 @@ function getWsUrl(token: string) {
 }
 
 export default function PlayVsPlayersPage() {
+  useRequireAuth();
   const { t } = useLanguage();
   const router = useRouter();
   const params = useParams();

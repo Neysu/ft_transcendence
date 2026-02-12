@@ -8,8 +8,10 @@ import { CardPanelSolid } from "@/components/molecules/CardPanelSolid";
 import { useLanguage } from "@/components/LanguageProvider";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { useRequireAuth } from "@/hooks/useRequireAuth";
 
 export default function CreateRoomPage() {
+  useRequireAuth();
   const { t } = useLanguage();
   const router = useRouter();
   const [roomName, setRoomName] = useState<string>("");

@@ -5,8 +5,10 @@ import { CardPanel } from "@/components/molecules/CardPanel";
 import { CardPanelSolid } from "@/components/molecules/CardPanelSolid";
 import { useLanguage } from "@/components/LanguageProvider";
 import { useRouter } from "next/navigation";
+import { useRequireAuth } from "@/hooks/useRequireAuth";
 
 export default function PlayVsHumansPage() {
+  useRequireAuth();
   const { t } = useLanguage();
   const router = useRouter();
 

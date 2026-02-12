@@ -19,6 +19,7 @@ import {
   type PresenceChattingPayload,
 } from "@/lib/presenceEvents";
 import { usePresenceWatch } from "@/hooks/usePresenceWatch";
+import { useRequireAuth } from "@/hooks/useRequireAuth";
 
 type Friend = {
   id: string;
@@ -101,6 +102,7 @@ function getRequestedUserIdFromUrl() {
 }
 
 export default function ChatPage() {
+  useRequireAuth();
   const router = useRouter();
   const { t } = useLanguage();
   const [requestedUserId, setRequestedUserId] = useState<string | null>(null);

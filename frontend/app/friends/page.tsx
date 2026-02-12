@@ -19,6 +19,7 @@ import {
   type PresenceWatchPayload,
   type PresenceWsMessage,
 } from "@/lib/presenceEvents";
+import { useRequireAuth } from "@/hooks/useRequireAuth";
 
 type FriendStatus = "online" | "chatting" | "in-game" | "offline";
 
@@ -51,6 +52,7 @@ function formatLastSeen(value: string | null) {
 }
 
 export default function FriendsPage() {
+  useRequireAuth();
   const router = useRouter();
   const { t } = useLanguage();
   const [query, setQuery] = useState("");
