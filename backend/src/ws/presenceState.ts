@@ -1,4 +1,4 @@
-export type PresenceStatus = "online" | "in-game" | "offline";
+export type PresenceStatus = "online" | "chatting" | "in-game" | "offline";
 export type PresenceSource = "chat" | "game" | "presence";
 
 export type PresenceSnapshot = {
@@ -71,6 +71,9 @@ function getStatus(userId: number): PresenceStatus {
   }
   if (getSourceCount("game", userId) > 0) {
     return "in-game";
+  }
+  if (getSourceCount("chat", userId) > 0) {
+    return "chatting";
   }
   return "online";
 }

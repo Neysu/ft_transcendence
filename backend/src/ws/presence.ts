@@ -13,18 +13,141 @@ import {
 type ClientMessage =
   | { type: "watch"; userIds: number[] }
   | { type: "check"; userId: number }
-  | { type: "watchFriends" };
+  | { type: "watchFriends" }
+  | { type: "chatting"; withUserId: number; isChatting: boolean };
 
 type ServerMessage =
   | { type: "registered"; userId: number }
   | { type: "presenceSnapshot"; users: PresenceSnapshot[] }
   | { type: "presenceUpdate"; user: PresenceSnapshot }
+  | { type: "chattingSnapshot"; users: Array<{ userId: number; withUserId: number | null; isChatting: boolean }> }
+  | { type: "chattingUpdate"; userId: number; withUserId: number | null; isChatting: boolean }
   | { type: "error"; message: string };
+
+type PresenceConnection = {
+  socket: WebSocket;
+  watchedUserIds: Set<number>;
+};
+
+type SocketChattingState = {
+  userId: number;
+  withUserId: number;
+  updatedAt: number;
+};
+
+const presenceConnections = new Map<WebSocket, PresenceConnection>();
+const chattingByUserId = new Map<number, { withUserId: number | null; isChatting: boolean }>();
+const socketChattingStateBySocket = new Map<WebSocket, SocketChattingState>();
+const chattingTimeoutBySocket = new Map<WebSocket, NodeJS.Timeout>();
+const CHATTING_TTL_MS = 3500;
 
 function safeSend(socket: WebSocket, payload: ServerMessage) {
   if (socket.readyState === WebSocket.OPEN) {
     socket.send(JSON.stringify(payload));
   }
+}
+
+function getChattingSnapshotForUsers(userIds: number[]) {
+  return userIds.map((userId) => {
+    const state = chattingByUserId.get(userId);
+    if (!state) {
+      return { userId, withUserId: null, isChatting: false as const };
+    }
+    return {
+      userId,
+      withUserId: state.withUserId,
+      isChatting: state.isChatting,
+    };
+  });
+}
+
+function updateConnectionWatch(socket: WebSocket, watchedUserIds: Set<number>) {
+  const current = presenceConnections.get(socket);
+  if (!current) return;
+  current.watchedUserIds = watchedUserIds;
+}
+
+function broadcastChattingUpdate(userId: number, withUserId: number | null, isChatting: boolean) {
+  for (const connection of presenceConnections.values()) {
+    if (connection.watchedUserIds.has(userId)) {
+      safeSend(connection.socket, { type: "chattingUpdate", userId, withUserId, isChatting });
+    }
+  }
+}
+
+function resolveUserChattingState(userId: number) {
+  let latest: SocketChattingState | null = null;
+  for (const state of socketChattingStateBySocket.values()) {
+    if (state.userId !== userId) continue;
+    if (!latest || state.updatedAt > latest.updatedAt) {
+      latest = state;
+    }
+  }
+  if (!latest) {
+    return { withUserId: null, isChatting: false as const };
+  }
+  return { withUserId: latest.withUserId, isChatting: true as const };
+}
+
+function reconcileUserChattingState(userId: number) {
+  const previous = chattingByUserId.get(userId) ?? { withUserId: null, isChatting: false };
+  const next = resolveUserChattingState(userId);
+
+  if (next.isChatting) {
+    chattingByUserId.set(userId, next);
+  } else {
+    chattingByUserId.delete(userId);
+  }
+
+  if (previous.isChatting !== next.isChatting || previous.withUserId !== next.withUserId) {
+    broadcastChattingUpdate(userId, next.withUserId, next.isChatting);
+  }
+}
+
+function clearSocketChattingState(socket: WebSocket) {
+  const timeout = chattingTimeoutBySocket.get(socket);
+  if (timeout) {
+    clearTimeout(timeout);
+    chattingTimeoutBySocket.delete(socket);
+  }
+
+  const state = socketChattingStateBySocket.get(socket);
+  if (!state) return;
+  socketChattingStateBySocket.delete(socket);
+  reconcileUserChattingState(state.userId);
+}
+
+function setSocketChattingState(socket: WebSocket, userId: number, withUserId: number, isChatting: boolean) {
+  const previous = socketChattingStateBySocket.get(socket);
+  const timeout = chattingTimeoutBySocket.get(socket);
+  if (timeout) {
+    clearTimeout(timeout);
+    chattingTimeoutBySocket.delete(socket);
+  }
+
+  if (!isChatting) {
+    if (previous) {
+      socketChattingStateBySocket.delete(socket);
+      reconcileUserChattingState(previous.userId);
+    }
+    return;
+  }
+
+  socketChattingStateBySocket.set(socket, {
+    userId,
+    withUserId,
+    updatedAt: Date.now(),
+  });
+
+  const nextTimeout = setTimeout(() => {
+    clearSocketChattingState(socket);
+  }, CHATTING_TTL_MS);
+  chattingTimeoutBySocket.set(socket, nextTimeout);
+
+  if (previous && previous.userId !== userId) {
+    reconcileUserChattingState(previous.userId);
+  }
+  reconcileUserChattingState(userId);
 }
 
 function getTokenFromRequest(request: FastifyRequest) {
@@ -92,6 +215,10 @@ export async function presenceWs(fastify: FastifyInstance) {
       }
       currentUserId = payload.id;
       trackUserConnected(currentUserId, "presence");
+      presenceConnections.set(socket, {
+        socket,
+        watchedUserIds,
+      });
       safeSend(socket, { type: "registered", userId: currentUserId });
 
       stopWatchingPresence = onPresenceChange((snapshot) => {
@@ -142,7 +269,12 @@ export async function presenceWs(fastify: FastifyInstance) {
         const allowed = await getAllowedUserIds(currentUserId);
         const authorizedUserIds = userIds.filter((userId) => allowed.has(userId));
         watchedUserIds = new Set<number>(authorizedUserIds);
+        updateConnectionWatch(socket, watchedUserIds);
         safeSend(socket, { type: "presenceSnapshot", users: getPresenceForUsers(authorizedUserIds) });
+        safeSend(socket, {
+          type: "chattingSnapshot",
+          users: getChattingSnapshotForUsers(authorizedUserIds),
+        });
         return;
       }
 
@@ -158,6 +290,10 @@ export async function presenceWs(fastify: FastifyInstance) {
           return safeSend(socket, { type: "error", message: "Forbidden" });
         }
         safeSend(socket, { type: "presenceSnapshot", users: [getPresenceForUser(payload.userId)] });
+        safeSend(socket, {
+          type: "chattingSnapshot",
+          users: getChattingSnapshotForUsers([payload.userId]),
+        });
         return;
       }
 
@@ -168,7 +304,30 @@ export async function presenceWs(fastify: FastifyInstance) {
         const friendIds = await loadFriendIds(currentUserId);
         const ids = Array.from(friendIds);
         watchedUserIds = new Set<number>(ids);
+        updateConnectionWatch(socket, watchedUserIds);
         safeSend(socket, { type: "presenceSnapshot", users: getPresenceForUsers(ids) });
+        safeSend(socket, {
+          type: "chattingSnapshot",
+          users: getChattingSnapshotForUsers(ids),
+        });
+        return;
+      }
+
+      if (payload.type === "chatting") {
+        if (!currentUserId) {
+          return safeSend(socket, { type: "error", message: "Not registered" });
+        }
+        if (!Number.isInteger(payload.withUserId) || payload.withUserId <= 0) {
+          return safeSend(socket, { type: "error", message: "Invalid withUserId" });
+        }
+        if (typeof payload.isChatting !== "boolean") {
+          return safeSend(socket, { type: "error", message: "Invalid isChatting" });
+        }
+        const allowed = await getAllowedUserIds(currentUserId);
+        if (!allowed.has(payload.withUserId)) {
+          return safeSend(socket, { type: "error", message: "Forbidden" });
+        }
+        setSocketChattingState(socket, currentUserId, payload.withUserId, payload.isChatting);
         return;
       }
 
@@ -177,9 +336,11 @@ export async function presenceWs(fastify: FastifyInstance) {
 
     socket.on("close", () => {
       stopWatchingPresence?.();
+      clearSocketChattingState(socket);
       if (currentUserId) {
         trackUserDisconnected(currentUserId, "presence");
       }
+      presenceConnections.delete(socket);
     });
   });
 }

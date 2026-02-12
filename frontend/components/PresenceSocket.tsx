@@ -3,8 +3,10 @@
 import { useEffect, useRef } from "react";
 import { AUTH_CHANGED_EVENT } from "@/components/AuthProvider";
 import {
+  PRESENCE_CHATTING_EVENT,
   PRESENCE_MESSAGE_EVENT,
   PRESENCE_WATCH_EVENT,
+  type PresenceChattingPayload,
   type PresenceWatchPayload,
   type PresenceWsMessage,
 } from "@/lib/presenceEvents";
@@ -30,9 +32,31 @@ export default function PresenceSocket() {
     };
 
     const closeSocket = () => {
-      if (socketRef.current) {
-        socketRef.current.close();
-        socketRef.current = null;
+      const socket = socketRef.current;
+      if (!socket) return;
+      socketRef.current = null;
+
+      socket.onopen = null;
+      socket.onmessage = null;
+      socket.onerror = null;
+      socket.onclose = null;
+
+      if (socket.readyState === WebSocket.CONNECTING) {
+        socket.addEventListener(
+          "open",
+          () => {
+            try {
+              socket.close();
+            } catch {
+            }
+          },
+          { once: true }
+        );
+        return;
+      }
+
+      if (socket.readyState === WebSocket.OPEN) {
+        socket.close();
       }
     };
 
@@ -91,10 +115,23 @@ export default function PresenceSocket() {
       socket.send(JSON.stringify({ type: "watch", userIds: ids }));
     };
 
+    const handleChatting = (event: Event) => {
+      const customEvent = event as CustomEvent<PresenceChattingPayload>;
+      const withUserId = customEvent.detail?.withUserId;
+      const isChatting = customEvent.detail?.isChatting;
+      if (!Number.isInteger(withUserId) || withUserId <= 0 || typeof isChatting !== "boolean") {
+        return;
+      }
+      const socket = socketRef.current;
+      if (!socket || socket.readyState !== WebSocket.OPEN) return;
+      socket.send(JSON.stringify({ type: "chatting", withUserId, isChatting }));
+    };
+
     connect();
     window.addEventListener(AUTH_CHANGED_EVENT, handleAuthChanged);
     window.addEventListener("storage", handleAuthChanged);
     window.addEventListener(PRESENCE_WATCH_EVENT, handleWatch as EventListener);
+    window.addEventListener(PRESENCE_CHATTING_EVENT, handleChatting as EventListener);
 
     return () => {
       disposed = true;
@@ -102,6 +139,7 @@ export default function PresenceSocket() {
       window.removeEventListener(AUTH_CHANGED_EVENT, handleAuthChanged);
       window.removeEventListener("storage", handleAuthChanged);
       window.removeEventListener(PRESENCE_WATCH_EVENT, handleWatch as EventListener);
+      window.removeEventListener(PRESENCE_CHATTING_EVENT, handleChatting as EventListener);
       closeSocket();
     };
   }, []);
