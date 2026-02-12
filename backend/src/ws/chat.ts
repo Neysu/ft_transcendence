@@ -5,14 +5,21 @@ import { attachHeartbeat, loadFriendIds, scheduleFriendIdsRefresh } from "./util
 import { trackUserConnected, trackUserDisconnected } from "./presenceState";
 
 type ClientMessage =
-  | { type: "send"; toUserId: number; message: string };
+  | { type: "send"; toUserId: number; message: string }
+  | { type: "markRead"; withUserId: number };
 
 type ServerMessage =
   | { type: "registered"; userId: number }
   | { type: "message"; fromUserId: number; message: string }
+  | { type: "unreadSnapshot"; unreadByUserId: Record<string, number> }
+  | { type: "unreadUpdate"; userId: number; count: number }
+  | { type: "readSnapshot"; seenByUserId: Record<string, string> }
+  | { type: "readUpdate"; userId: number; seenAt: string }
   | { type: "error"; message: string };
 
 const connectionsByUserId = new Map<number, Set<WebSocket>>();
+const unreadByRecipientId = new Map<number, Map<number, number>>();
+const seenByOwnerUserId = new Map<number, Map<number, string>>();
 
 function addConnection(userId: number, socket: WebSocket) {
   let sockets = connectionsByUserId.get(userId);
@@ -36,6 +43,83 @@ function removeConnection(userId: number | null, socket: WebSocket) {
 function safeSend(socket: WebSocket, payload: ServerMessage) {
   if (socket.readyState === WebSocket.OPEN) {
     socket.send(JSON.stringify(payload));
+  }
+}
+
+function getUnreadSnapshot(receiverUserId: number): Record<string, number> {
+  const counts = unreadByRecipientId.get(receiverUserId);
+  if (!counts) return {};
+  const snapshot: Record<string, number> = {};
+  for (const [senderId, count] of counts.entries()) {
+    if (count > 0) {
+      snapshot[String(senderId)] = count;
+    }
+  }
+  return snapshot;
+}
+
+function incrementUnread(receiverUserId: number, senderUserId: number) {
+  let counts = unreadByRecipientId.get(receiverUserId);
+  if (!counts) {
+    counts = new Map<number, number>();
+    unreadByRecipientId.set(receiverUserId, counts);
+  }
+  const next = (counts.get(senderUserId) ?? 0) + 1;
+  counts.set(senderUserId, next);
+  return next;
+}
+
+function clearUnread(receiverUserId: number, senderUserId: number) {
+  const counts = unreadByRecipientId.get(receiverUserId);
+  if (!counts) return;
+  counts.delete(senderUserId);
+  if (counts.size === 0) {
+    unreadByRecipientId.delete(receiverUserId);
+  }
+}
+
+function broadcastUnreadUpdate(receiverUserId: number, senderUserId: number, count: number) {
+  const recipients = connectionsByUserId.get(receiverUserId);
+  if (!recipients || recipients.size === 0) return;
+  for (const recipientSocket of recipients) {
+    safeSend(recipientSocket, {
+      type: "unreadUpdate",
+      userId: senderUserId,
+      count,
+    });
+  }
+}
+
+function getReadSnapshot(ownerUserId: number): Record<string, string> {
+  const seenMap = seenByOwnerUserId.get(ownerUserId);
+  if (!seenMap) return {};
+  const snapshot: Record<string, string> = {};
+  for (const [friendUserId, seenAt] of seenMap.entries()) {
+    if (seenAt) {
+      snapshot[String(friendUserId)] = seenAt;
+    }
+  }
+  return snapshot;
+}
+
+function setSeen(ownerUserId: number, readerUserId: number, seenAt: string) {
+  let seenMap = seenByOwnerUserId.get(ownerUserId);
+  if (!seenMap) {
+    seenMap = new Map<number, string>();
+    seenByOwnerUserId.set(ownerUserId, seenMap);
+  }
+  seenMap.set(readerUserId, seenAt);
+}
+
+function broadcastReadUpdate(ownerUserId: number, readerUserId: number, seenAt: string) {
+  const recipients = connectionsByUserId.get(ownerUserId);
+  if (!recipients || recipients.size === 0) return;
+  for (const recipientSocket of recipients) {
+    safeSend(recipientSocket, {
+      type: "readUpdate",
+      userId: readerUserId,
+      seenAt,
+    });
   }
 }
 
@@ -107,6 +191,33 @@ export async function chatWs(fastify: FastifyInstance) {
             select: { id: true, senderId: true, content: true },
           });
 
+        const pendingCountBySender = new Map<number, number>();
+        for (const msg of pending) {
+          pendingCountBySender.set(msg.senderId, (pendingCountBySender.get(msg.senderId) ?? 0) + 1);
+        }
+        if (pendingCountBySender.size > 0) {
+          let unreadForUser = unreadByRecipientId.get(currentUserId);
+          if (!unreadForUser) {
+            unreadForUser = new Map<number, number>();
+            unreadByRecipientId.set(currentUserId, unreadForUser);
+          }
+          for (const [senderId, pendingCount] of pendingCountBySender.entries()) {
+            const existing = unreadForUser.get(senderId) ?? 0;
+            if (pendingCount > existing) {
+              unreadForUser.set(senderId, pendingCount);
+            }
+          }
+        }
+
+        safeSend(socket, {
+          type: "unreadSnapshot",
+          unreadByUserId: getUnreadSnapshot(currentUserId),
+        });
+        safeSend(socket, {
+          type: "readSnapshot",
+          seenByUserId: getReadSnapshot(currentUserId),
+        });
+
         if (pending.length > 0) {
           for (const msg of pending) {
             safeSend(socket, {
@@ -122,6 +233,14 @@ export async function chatWs(fastify: FastifyInstance) {
         }
       } catch (error) {
         fastify.log.error({ err: error }, "Failed to deliver pending messages:");
+        safeSend(socket, {
+          type: "unreadSnapshot",
+          unreadByUserId: getUnreadSnapshot(currentUserId),
+        });
+        safeSend(socket, {
+          type: "readSnapshot",
+          seenByUserId: getReadSnapshot(currentUserId),
+        });
       }
     } catch {
       safeSend(socket, { type: "error", message: "Invalid token" });
@@ -187,6 +306,9 @@ export async function chatWs(fastify: FastifyInstance) {
           return safeSend(socket, { type: "error", message: "Failed to save message" });
         }
 
+        const unreadCount = incrementUnread(payload.toUserId, currentUserId);
+        broadcastUnreadUpdate(payload.toUserId, currentUserId, unreadCount);
+
         const recipients = connectionsByUserId.get(payload.toUserId);
         if (recipients && recipients.size > 0) {
           const deliveredAt = new Date();
@@ -208,6 +330,24 @@ export async function chatWs(fastify: FastifyInstance) {
             }
           }
         }
+        return;
+      }
+
+      if (payload.type === "markRead") {
+        if (currentUserId === null) {
+          return safeSend(socket, { type: "error", message: "Not registered" });
+        }
+        if (!Number.isInteger(payload.withUserId) || payload.withUserId <= 0) {
+          return safeSend(socket, { type: "error", message: "Invalid withUserId" });
+        }
+        if (!friendIds.has(payload.withUserId)) {
+          return safeSend(socket, { type: "error", message: "Not friends" });
+        }
+        clearUnread(currentUserId, payload.withUserId);
+        broadcastUnreadUpdate(currentUserId, payload.withUserId, 0);
+        const seenAt = new Date().toISOString();
+        setSeen(payload.withUserId, currentUserId, seenAt);
+        broadcastReadUpdate(payload.withUserId, currentUserId, seenAt);
         return;
       }
 
