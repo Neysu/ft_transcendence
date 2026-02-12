@@ -6,9 +6,11 @@ import { RPSOpponent } from "@/components/atoms/RPSOpponent";
 import { CardPanel } from "@/components/molecules/CardPanel";
 import { CardPanelSolid } from "@/components/molecules/CardPanelSolid";
 import { useLanguage } from "@/components/LanguageProvider";
+import { saveGameSummary, type SummaryRound, type SummaryWinner } from "@/lib/gameSummary";
+import { getGameWsErrorKey, mapGameWsErrorMessage } from "@/lib/gameWsErrors";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useRequireAuth } from "@/hooks/useRequireAuth";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 type WsGameState = {
   id: number;
@@ -63,41 +65,21 @@ function getWsUrl(token: string) {
   return base.toString();
 }
 
-function mapGameWsErrorMessage(t: (key: string) => string, message?: string) {
-  if (!message) return "";
-  const normalized = message.trim();
-  const mapping: Record<string, string> = {
-    "Missing token": "missingAuthToken",
-    "Invalid token": "gameWsInvalidToken",
-    "Message too large": "gameWsMessageTooLarge",
-    "Invalid JSON": "gameWsInvalidJson",
-    "Not registered": "gameWsNotRegistered",
-    "Invalid room code": "gameInvalidRoomCode",
-    "Room code must be 3-15 characters": "gameRoomCodeLength",
-    "Room already exists": "gameRoomAlreadyExists",
-    "You already created a room": "gameRoomAlreadyCreated",
-    "Room not found": "roomNotFound",
-    "You are already hosting this room": "gameAlreadyHostingRoom",
-    "Room host already connected": "gameAlreadyHostingRoom",
-    "Host is not connected": "gameHostNotConnected",
-    "Invalid opponentId": "gameInvalidOpponentId",
-    "Cannot play against yourself": "gameCannotPlayYourself",
-    "Opponent not found": "gameOpponentNotFound",
-    "Invalid gameId": "gameInvalidGameId",
-    "Game not found": "gameNotFound",
-    "Not a player in this game": "gameNotPlayer",
-    "No round found": "gameNoRoundFound",
-    "Invalid move": "gameInvalidMove",
-    "Game already finished": "gameAlreadyFinished",
-    "Move already submitted": "gameMoveAlreadySubmitted",
-    "Invalid round moves": "gameInvalidRoundMoves",
-    "Failed to create game": "gameFailedCreate",
-    "Failed to apply move": "gameFailedApplyMove",
-    "Unknown message type": "gameUnknownMessageType",
-    "Game finished": "gameFinished",
-  };
-  const key = mapping[normalized];
-  return key ? t(key) : normalized;
+function toOutcomeFromPerspective(
+  outcome: "PLAYER1" | "PLAYER2" | "DRAW",
+  isPlayerOne: boolean,
+): SummaryRound["outcome"] {
+  if (outcome === "DRAW") return "DRAW";
+  if (isPlayerOne) {
+    return outcome === "PLAYER1" ? "WIN" : "LOSE";
+  }
+  return outcome === "PLAYER2" ? "WIN" : "LOSE";
+}
+
+function getWinnerFromScores(playerScore: number, opponentScore: number): SummaryWinner {
+  if (playerScore > opponentScore) return "PLAYER";
+  if (opponentScore > playerScore) return "OPPONENT";
+  return "DRAW";
 }
 
 export default function PlayVsPlayersPage() {
@@ -118,12 +100,20 @@ export default function PlayVsPlayersPage() {
   const [gameStatus, setGameStatus] = useState<WsGameState["status"]>("ONGOING");
   const socketRef = useRef<WebSocket | null>(null);
   const currentUserIdRef = useRef<number | null>(null);
+  const roomCreatedRef = useRef(false);
+  const roomJoinedRef = useRef(false);
+  const redirectedToCreateRef = useRef(false);
+  const redirectedToJoinRef = useRef(false);
   const pendingSnapshotRef = useRef<{
     game: WsGameState;
     round: WsRoundState;
     resolved: boolean;
   } | null>(null);
   const joinTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const activeGameIdRef = useRef<number | null>(null);
+  const scoreRef = useRef<{ player: number; opponent: number }>({ player: 0, opponent: 0 });
+  const roundHistoryRef = useRef<SummaryRound[]>([]);
+  const seenResolvedRoundIdsRef = useRef<Set<number>>(new Set());
   const choiceSize = "clamp(84px, 20vw, 160px)";
   const opponentSize = "clamp(80px, 18vw, 160px)";
 
@@ -142,6 +132,30 @@ export default function PlayVsPlayersPage() {
       : "";
   const displayedRoomError = blockingRoomError || roomError;
 
+  const redirectBackToRoomForm = useCallback((kind: "create" | "join", reason?: string) => {
+    const alreadyRedirected = kind === "create" ? redirectedToCreateRef : redirectedToJoinRef;
+    if (alreadyRedirected.current) {
+      return;
+    }
+    alreadyRedirected.current = true;
+
+    const params = new URLSearchParams();
+    const errorKey = getGameWsErrorKey(reason);
+    if (errorKey) {
+      params.set("errorKey", errorKey);
+    } else if (reason) {
+      params.set("errorMessage", reason);
+    }
+    if (roomCode) {
+      params.set("room", roomCode);
+    }
+    const target =
+      kind === "create"
+        ? "/play-vs-humans/create-room"
+        : "/play-vs-humans/join-room";
+    router.replace(`${target}?${params.toString()}`);
+  }, [roomCode, router]);
+
   const applySnapshot = (game: WsGameState, round: WsRoundState, resolved: boolean) => {
     const currentUserId = currentUserIdRef.current;
     if (!currentUserId) {
@@ -150,10 +164,12 @@ export default function PlayVsPlayersPage() {
     }
 
     setGameId(game.id);
+    activeGameIdRef.current = game.id;
     setGameStatus(game.status);
     if (currentUserId === game.playerOneId) {
       setPlayerScore(game.playerOneScore);
       setOpponentScore(game.playerTwoScore);
+      scoreRef.current = { player: game.playerOneScore, opponent: game.playerTwoScore };
       if (resolved) {
         setPlayerChoice(toChoice(round.playerOneMove));
         setOpponentChoice(toChoice(round.playerTwoMove));
@@ -161,6 +177,7 @@ export default function PlayVsPlayersPage() {
     } else if (currentUserId === game.playerTwoId) {
       setPlayerScore(game.playerTwoScore);
       setOpponentScore(game.playerOneScore);
+      scoreRef.current = { player: game.playerTwoScore, opponent: game.playerOneScore };
       if (resolved) {
         setPlayerChoice(toChoice(round.playerTwoMove));
         setOpponentChoice(toChoice(round.playerOneMove));
@@ -173,6 +190,10 @@ export default function PlayVsPlayersPage() {
       return;
     }
 
+    roomCreatedRef.current = false;
+    roomJoinedRef.current = false;
+    redirectedToCreateRef.current = false;
+    redirectedToJoinRef.current = false;
     const ws = new WebSocket(getWsUrl(authToken), authToken);
     socketRef.current = ws;
 
@@ -189,6 +210,8 @@ export default function PlayVsPlayersPage() {
         }
         joinTimeoutRef.current = setTimeout(() => {
           setRoomError(t("roomNotFound"));
+          redirectBackToRoomForm("join", "Room not found");
+          ws.close(1000, "Room not found");
         }, 3000);
       }
     };
@@ -212,6 +235,7 @@ export default function PlayVsPlayersPage() {
       }
 
       if (message.type === "roomCreated") {
+        roomCreatedRef.current = true;
         setRoomStatus(t("roomCreatedWaiting"));
         setRoomError("");
         if (joinTimeoutRef.current) {
@@ -222,6 +246,12 @@ export default function PlayVsPlayersPage() {
       }
 
       if (message.type === "roomJoined" || message.type === "gameState") {
+        if (activeGameIdRef.current !== message.game.id) {
+          roundHistoryRef.current = [];
+          seenResolvedRoundIdsRef.current.clear();
+        }
+        roomCreatedRef.current = true;
+        roomJoinedRef.current = true;
         setRoomStatus("");
         setRoomError("");
         if (joinTimeoutRef.current) {
@@ -244,14 +274,80 @@ export default function PlayVsPlayersPage() {
       if (message.type === "roundResolved") {
         setIsWaitingForOpponent(false);
         setPendingChoice(null);
+
+        const currentUserId = currentUserIdRef.current;
+        if (currentUserId) {
+          const isPlayerOne = currentUserId === message.game.playerOneId;
+          const playerMove = isPlayerOne ? message.round.playerOneMove : message.round.playerTwoMove;
+          const opponentMove = isPlayerOne
+            ? message.round.playerTwoMove
+            : message.round.playerOneMove;
+          const nextPlayerScore = isPlayerOne ? message.game.playerOneScore : message.game.playerTwoScore;
+          const nextOpponentScore = isPlayerOne ? message.game.playerTwoScore : message.game.playerOneScore;
+          const prevPlayerScore = scoreRef.current.player;
+          const prevOpponentScore = scoreRef.current.opponent;
+
+          if (
+            playerMove &&
+            opponentMove &&
+            !seenResolvedRoundIdsRef.current.has(message.round.id)
+          ) {
+            seenResolvedRoundIdsRef.current.add(message.round.id);
+            roundHistoryRef.current = [
+              ...roundHistoryRef.current,
+              {
+                roundNumber: message.round.roundNumber,
+                playerMove,
+                opponentMove,
+                outcome: toOutcomeFromPerspective(message.outcome, isPlayerOne),
+                playerDelta: Math.max(0, nextPlayerScore - prevPlayerScore),
+                opponentDelta: Math.max(0, nextOpponentScore - prevOpponentScore),
+                playerScore: nextPlayerScore,
+                opponentScore: nextOpponentScore,
+              },
+            ];
+          }
+        }
+
         applySnapshot(message.game, message.round, true);
+
+        if (message.game.status === "FINISHED") {
+          const finalPlayerScore = scoreRef.current.player;
+          const finalOpponentScore = scoreRef.current.opponent;
+          saveGameSummary({
+            mode: "humans",
+            roomCode,
+            winner: getWinnerFromScores(finalPlayerScore, finalOpponentScore),
+            playerScore: finalPlayerScore,
+            opponentScore: finalOpponentScore,
+            rounds: roundHistoryRef.current,
+            finishedAt: new Date().toISOString(),
+          });
+          router.push("/game-summary");
+          return;
+        }
         return;
       }
 
       if (message.type === "error") {
-        setRoomError(mapGameWsErrorMessage(t, message.message));
+        const errorKey = getGameWsErrorKey(message.message);
+        const mappedError = mapGameWsErrorMessage(t, message.message);
+        if (errorKey === "gameFinished") {
+          setRoomError("");
+          setGameStatus("FINISHED");
+        } else {
+          setRoomError(mappedError);
+        }
         setIsWaitingForOpponent(false);
         setPendingChoice(null);
+        if (mode === "create" && !roomCreatedRef.current) {
+          redirectBackToRoomForm("create", message.message);
+          return;
+        }
+        if (mode === "join" && !roomJoinedRef.current) {
+          redirectBackToRoomForm("join", message.message);
+          return;
+        }
       }
     };
 
@@ -259,7 +355,22 @@ export default function PlayVsPlayersPage() {
       socketRef.current = null;
       setIsWaitingForOpponent(false);
       if (event.reason) {
-        setRoomError(mapGameWsErrorMessage(t, event.reason));
+        const errorKey = getGameWsErrorKey(event.reason);
+        const mappedError = mapGameWsErrorMessage(t, event.reason);
+        if (errorKey === "gameFinished") {
+          setRoomError("");
+          setGameStatus("FINISHED");
+        } else {
+          setRoomError(mappedError);
+        }
+        if (mode === "create" && !roomCreatedRef.current) {
+          redirectBackToRoomForm("create", event.reason);
+          return;
+        }
+        if (mode === "join" && !roomJoinedRef.current) {
+          redirectBackToRoomForm("join", event.reason);
+          return;
+        }
       }
     };
 
@@ -270,20 +381,7 @@ export default function PlayVsPlayersPage() {
       }
       ws.close();
     };
-  }, [authToken, blockingRoomError, mode, roomCode, t]);
-
-  useEffect(() => {
-    if (!displayedRoomError || mode !== "join") {
-      return;
-    }
-    const normalized = displayedRoomError.toLowerCase();
-    if (
-      normalized.includes("room not found") ||
-      normalized.includes(t("roomNotFound").toLowerCase())
-    ) {
-      router.push("/404");
-    }
-  }, [displayedRoomError, mode, router, t]);
+  }, [authToken, blockingRoomError, mode, redirectBackToRoomForm, roomCode, router, t]);
 
   const handlePlayerChoice = (choice: Choice) => {
     if (gameStatus === "FINISHED") {
@@ -345,7 +443,7 @@ export default function PlayVsPlayersPage() {
               {roomStatus ? (
                 <p className="text-xs text-gray-500 dark:text-gray-400">{roomStatus}</p>
               ) : null}
-              {displayedRoomError ? (
+              {displayedRoomError && gameStatus !== "FINISHED" ? (
                 <p className="text-xs text-red-500">{displayedRoomError}</p>
               ) : null}
               {gameStatus === "FINISHED" ? (

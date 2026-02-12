@@ -6,6 +6,7 @@ import { RPSOpponent } from "@/components/atoms/RPSOpponent";
 import { CardPanel } from "@/components/molecules/CardPanel";
 import { CardPanelSolid } from "@/components/molecules/CardPanelSolid";
 import { useLanguage } from "@/components/LanguageProvider";
+import { saveGameSummary, type SummaryRound, type SummaryWinner } from "@/lib/gameSummary";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { useRequireAuth } from "@/hooks/useRequireAuth";
@@ -53,6 +54,18 @@ function toChoice(move: BotRoundState["playerTwoMove"]): Choice | null {
   return null;
 }
 
+function toSummaryOutcome(outcome: BotMoveResponse["outcome"]): SummaryRound["outcome"] {
+  if (outcome === "PLAYER1") return "WIN";
+  if (outcome === "PLAYER2") return "LOSE";
+  return "DRAW";
+}
+
+function getWinnerFromScores(playerScore: number, opponentScore: number): SummaryWinner {
+  if (playerScore > opponentScore) return "PLAYER";
+  if (opponentScore > playerScore) return "OPPONENT";
+  return "DRAW";
+}
+
 function mapBotErrorMessage(
   t: (key: string) => string,
   message?: string,
@@ -88,6 +101,8 @@ export default function PlayVsBotPage() {
   const [gameId, setGameId] = useState<number | null>(null);
   const [gameStatus, setGameStatus] = useState<BotGameState["status"]>("ONGOING");
   const [errorMessage, setErrorMessage] = useState<string>("");
+  const scoreRef = useRef<{ player: number; opponent: number }>({ player: 0, opponent: 0 });
+  const roundHistoryRef = useRef<SummaryRound[]>([]);
   const choiceSize = "clamp(84px, 20vw, 160px)";
   const opponentSize = "clamp(80px, 18vw, 160px)";
 
@@ -121,6 +136,8 @@ export default function PlayVsBotPage() {
         setGameStatus(data.game.status);
         setPlayerScore(data.game.playerOneScore);
         setOpponentScore(data.game.playerTwoScore);
+        scoreRef.current = { player: data.game.playerOneScore, opponent: data.game.playerTwoScore };
+        roundHistoryRef.current = [];
       } catch {
         setErrorMessage(mapBotErrorMessage(tRef.current, undefined, "botFailedCreateGame"));
         setGameStatus("FINISHED");
@@ -179,6 +196,41 @@ export default function PlayVsBotPage() {
       setPlayerChoice(pendingChoice);
       setOpponentChoice(toChoice(data.round.playerTwoMove));
       setPendingChoice(null);
+
+      const prevPlayerScore = scoreRef.current.player;
+      const prevOpponentScore = scoreRef.current.opponent;
+      const nextPlayerScore = data.game.playerOneScore;
+      const nextOpponentScore = data.game.playerTwoScore;
+      scoreRef.current = { player: nextPlayerScore, opponent: nextOpponentScore };
+
+      if (data.round.playerTwoMove) {
+        roundHistoryRef.current = [
+          ...roundHistoryRef.current,
+          {
+            roundNumber: data.round.roundNumber,
+            playerMove: move,
+            opponentMove: data.round.playerTwoMove,
+            outcome: toSummaryOutcome(data.outcome),
+            playerDelta: Math.max(0, nextPlayerScore - prevPlayerScore),
+            opponentDelta: Math.max(0, nextOpponentScore - prevOpponentScore),
+            playerScore: nextPlayerScore,
+            opponentScore: nextOpponentScore,
+          },
+        ];
+      }
+
+      if (data.game.status === "FINISHED") {
+        saveGameSummary({
+          mode: "bot",
+          winner: getWinnerFromScores(nextPlayerScore, nextOpponentScore),
+          playerScore: nextPlayerScore,
+          opponentScore: nextOpponentScore,
+          rounds: roundHistoryRef.current,
+          finishedAt: new Date().toISOString(),
+        });
+        router.push("/game-summary");
+        return;
+      }
     } catch {
       setErrorMessage(mapBotErrorMessage(t, undefined, "botFailedPlayRound"));
       setGameStatus("FINISHED");
@@ -211,6 +263,8 @@ export default function PlayVsBotPage() {
         setGameStatus(data.game.status);
         setPlayerScore(data.game.playerOneScore);
         setOpponentScore(data.game.playerTwoScore);
+        scoreRef.current = { player: data.game.playerOneScore, opponent: data.game.playerTwoScore };
+        roundHistoryRef.current = [];
       } catch {
         setErrorMessage(mapBotErrorMessage(t, undefined, "botFailedCreateGame"));
       } finally {
@@ -237,7 +291,7 @@ export default function PlayVsBotPage() {
               {isLoading ? (
                 <p className="text-xs text-gray-500 dark:text-gray-400">{t("creatingGame")}</p>
               ) : null}
-              {errorMessage ? (
+              {errorMessage && gameStatus !== "FINISHED" ? (
                 <p className="text-xs text-red-500">{errorMessage}</p>
               ) : null}
               {gameStatus === "FINISHED" ? (

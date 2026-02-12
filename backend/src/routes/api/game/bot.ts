@@ -15,6 +15,7 @@ const BOT_PASSWORD = "rps_bot";
 const BOT_MOVES: Move[] = ["ROCK", "PAPER", "SCISSORS"];
 const BOT_LEARNING_SAMPLE_SIZE = 20;
 const BOT_MAX_MOVE_CHANCE = 50;
+const WINNING_SCORE = 2;
 
 class BotMoveClientError extends Error {
   constructor(message: string) {
@@ -381,16 +382,17 @@ export async function botGameRoute(fastify: FastifyInstance) {
               game.playerOneScore + (winnerId === game.playerOneId ? 1 : 0);
             const playerTwoScore =
               game.playerTwoScore + (winnerId === game.playerTwoId ? 1 : 0);
-            const isLastRound = game.round >= 3;
-            const nextRoundNumber = isLastRound ? game.round : game.round + 1;
+            const isGameFinished =
+              playerOneScore >= WINNING_SCORE || playerTwoScore >= WINNING_SCORE;
+            const nextRoundNumber = isGameFinished ? game.round : game.round + 1;
             const updatedGame = await tx.game.update({
               where: { id: game.id },
               data: {
                 playerOneScore,
                 playerTwoScore,
                 round: nextRoundNumber,
-                status: isLastRound ? "FINISHED" : "ONGOING",
-                finishedAt: isLastRound ? new Date() : null,
+                status: isGameFinished ? "FINISHED" : "ONGOING",
+                finishedAt: isGameFinished ? new Date() : null,
               },
               select: {
                 id: true,
@@ -423,7 +425,7 @@ export async function botGameRoute(fastify: FastifyInstance) {
               playerTwoMove: string | null;
               winnerId: number | null;
             } | null = null;
-            if (!isLastRound) {
+            if (!isGameFinished) {
               nextRound = await tx.round.create({
                 data: { gameId: game.id, roundNumber: nextRoundNumber },
                 select: {

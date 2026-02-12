@@ -6,16 +6,34 @@ import { ButtonSubmite } from "@/components/atoms/ButtonSubmite";
 import { CardPanel } from "@/components/molecules/CardPanel";
 import { CardPanelSolid } from "@/components/molecules/CardPanelSolid";
 import { useLanguage } from "@/components/LanguageProvider";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { mapGameWsErrorMessage } from "@/lib/gameWsErrors";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useEffect, useState } from "react";
 import { useRequireAuth } from "@/hooks/useRequireAuth";
 
-export default function CreateRoomPage() {
+function CreateRoomPageContent() {
   useRequireAuth();
   const { t } = useLanguage();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [roomName, setRoomName] = useState<string>("");
+  const [roomError, setRoomError] = useState<string>("");
+  const [ignoreQueryError, setIgnoreQueryError] = useState<boolean>(false);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const queryErrorKey = searchParams.get("errorKey");
+  const queryErrorMessage = searchParams.get("errorMessage");
+  const queryRoomName = searchParams.get("room");
+  const queryError = queryErrorKey
+    ? t(queryErrorKey)
+    : mapGameWsErrorMessage(t, queryErrorMessage);
+  const displayedError = roomError || (!ignoreQueryError ? queryError : "");
+
+  useEffect(() => {
+    if (!queryRoomName || roomName) {
+      return;
+    }
+    setRoomName(queryRoomName.replace(/-/g, " "));
+  }, [queryRoomName, roomName]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -26,6 +44,13 @@ export default function CreateRoomPage() {
     }
 
     const normalizedRoomCode = trimmedRoomName.toLowerCase().replace(/\s+/g, "-");
+    if (normalizedRoomCode.length < 3 || normalizedRoomCode.length > 15) {
+      setRoomError(t("gameRoomCodeLength"));
+      return;
+    }
+
+    setRoomError("");
+    setIgnoreQueryError(true);
     const roomPath = encodeURIComponent(normalizedRoomCode);
 
     try {
@@ -67,13 +92,20 @@ export default function CreateRoomPage() {
                   type="text"
                   placeholder={t("roomNamePlaceholder")}
                   value={roomName}
-                  onChange={(e) => setRoomName(e.target.value)}
+                  onChange={(e) => {
+                    setRoomName(e.target.value);
+                    setRoomError("");
+                    setIgnoreQueryError(true);
+                  }}
                   maxLength={15}
                   className="w-full text-center text-lg"
                 />
                 <p className="text-xs text-gray-500 dark:text-gray-400 text-center">
                   {roomName.length}/15 {t("characters")}
                 </p>
+                {displayedError ? (
+                  <p className="text-xs text-red-500 text-center">{displayedError}</p>
+                ) : null}
               </div>
 
               {/* Submit button */}
@@ -85,5 +117,13 @@ export default function CreateRoomPage() {
         </CardPanel>
       </div>
     </div>
+  );
+}
+
+export default function CreateRoomPage() {
+  return (
+    <Suspense fallback={<div className="relative min-h-[calc(100vh-160px)]" />}>
+      <CreateRoomPageContent />
+    </Suspense>
   );
 }
