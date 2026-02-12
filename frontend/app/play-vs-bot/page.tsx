@@ -163,7 +163,7 @@ export default function PlayVsBotPage() {
     if (gameStatus === "FINISHED") {
       return;
     }
-    if (!pendingChoice || !gameId) {
+    if (!pendingChoice || !gameId || isWaitingForBot) {
       return;
     }
     const token = getToken();
@@ -328,7 +328,7 @@ export default function PlayVsBotPage() {
                   onClick={handleValidateChoice}
                   className={`px-6 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors ${
                     pendingChoice && !playerChoice ? "opacity-100" : "opacity-0 pointer-events-none"
-                  }`}
+                  } ${isWaitingForBot ? "pointer-events-none opacity-70" : ""}`}
                 >
                   {t("validate")}
                 </button>

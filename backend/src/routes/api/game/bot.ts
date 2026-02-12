@@ -292,6 +292,41 @@ export async function botGameRoute(fastify: FastifyInstance) {
           }
 
           const botId = await getOrCreateBotId();
+          const precheckedGame = await prisma.game.findUnique({
+            where: { id: body.gameId },
+            select: {
+              id: true,
+              playerOneId: true,
+              playerTwoId: true,
+              round: true,
+              status: true,
+            },
+          });
+          if (!precheckedGame) {
+            throw new BotMoveClientError("Game not found");
+          }
+          if (precheckedGame.playerOneId !== authUserId || precheckedGame.playerTwoId !== botId) {
+            throw new BotMoveClientError("Not a bot game");
+          }
+          if (precheckedGame.status === "FINISHED") {
+            throw new BotMoveClientError("Game already finished");
+          }
+          const precheckedRound = await prisma.round.findFirst({
+            where: {
+              gameId: precheckedGame.id,
+              roundNumber: precheckedGame.round,
+              winnerId: null,
+            },
+            orderBy: { id: "desc" },
+            select: { playerOneMove: true },
+          });
+          if (precheckedRound?.playerOneMove) {
+            throw new BotMoveClientError("Move already submitted");
+          }
+
+          // Compute adaptive move outside transaction to avoid tx timeout.
+          const botMove = await getAdaptiveBotMove(authUserId, botId);
+
           const result = await prisma.$transaction(async (tx: UserTx) => {
             const game = await tx.game.findUnique({
               where: { id: body.gameId },
@@ -343,7 +378,6 @@ export async function botGameRoute(fastify: FastifyInstance) {
               throw new BotMoveClientError("Move already submitted");
             }
 
-            const botMove = await getAdaptiveBotMove(authUserId, botId);
             const updatedRound = await tx.round.update({
               where: { id: round.id },
               data: { playerOneMove: body.move, playerTwoMove: botMove },
