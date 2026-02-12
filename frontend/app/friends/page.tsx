@@ -7,9 +7,11 @@ import { ButtonCircleBack } from "@/components/atoms/ButtonCircleBack";
 import { TextInput } from "@/components/atoms/TextInput";
 import { CardPanel } from "@/components/molecules/CardPanel";
 import { CardPanelSolid } from "@/components/molecules/CardPanelSolid";
+import { AUTH_CHANGED_EVENT } from "@/components/AuthProvider";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { DEFAULT_AVATAR_PATH, resolveAvatarUrl } from "@/lib/avatar";
+import { getUserIdFromStoredToken } from "@/lib/authToken";
 import {
   PRESENCE_MESSAGE_EVENT,
   PRESENCE_WATCH_EVENT,
@@ -18,12 +20,13 @@ import {
   type PresenceWsMessage,
 } from "@/lib/presenceEvents";
 
-type FriendStatus = "online" | "in-game" | "offline";
+type FriendStatus = "online" | "chatting" | "in-game" | "offline";
 
 type Friend = {
   id: string;
   name: string;
   status: FriendStatus;
+  isChatting?: boolean;
   lastSeen?: string;
   profileImage?: string;
 };
@@ -39,7 +42,12 @@ function formatLastSeen(value: string | null) {
   if (!value) return undefined;
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return undefined;
-  return date.toLocaleString();
+  const year = date.getUTCFullYear();
+  const month = String(date.getUTCMonth() + 1).padStart(2, "0");
+  const day = String(date.getUTCDate()).padStart(2, "0");
+  const hours = String(date.getUTCHours()).padStart(2, "0");
+  const minutes = String(date.getUTCMinutes()).padStart(2, "0");
+  return `${year}-${month}-${day} ${hours}:${minutes} UTC`;
 }
 
 export default function FriendsPage() {
@@ -60,6 +68,7 @@ export default function FriendsPage() {
   const [requestsActionLoading, setRequestsActionLoading] = useState<number | null>(null);
   const [friendActionLoading, setFriendActionLoading] = useState<string | null>(null);
   const [brokenAvatarIds, setBrokenAvatarIds] = useState<Record<string, boolean>>({});
+  const [presenceUserId, setPresenceUserId] = useState<number | null>(() => getUserIdFromStoredToken());
   const friendSkeletonRows = [1, 2, 3];
   const requestSkeletonRows = [1, 2];
 
@@ -76,18 +85,21 @@ export default function FriendsPage() {
 
   const statusTextClass = (status: FriendStatus) => {
     if (status === "online") return "text-emerald-700";
+    if (status === "chatting") return "text-[#6d28d9]";
     if (status === "in-game") return "text-amber-700";
     return "text-slate-600";
   };
 
   const statusTextBgClass = (status: FriendStatus) => {
     if (status === "online") return "bg-emerald-100";
+    if (status === "chatting") return "bg-[#ede9fe]";
     if (status === "in-game") return "bg-amber-100";
     return "bg-red-100";
   };
 
   const statusDotClass = (status: FriendStatus) => {
     if (status === "online") return "bg-emerald-500";
+    if (status === "chatting") return "bg-[#7c3aed]";
     if (status === "in-game") return "bg-amber-500";
     return "bg-red-500";
   };
@@ -160,6 +172,7 @@ export default function FriendsPage() {
             id,
             name: friend.username,
             status: existing?.status ?? ("offline" as const),
+            isChatting: existing?.isChatting ?? false,
             lastSeen: existing?.lastSeen,
             profileImage: friend.profileImage || undefined,
           };
@@ -240,6 +253,20 @@ export default function FriendsPage() {
     void refreshFriendsData();
   }, [refreshFriendsData]);
 
+  useEffect(() => {
+    const syncUserIdFromToken = () => {
+      const userId = getUserIdFromStoredToken();
+      setPresenceUserId(userId);
+    };
+    syncUserIdFromToken();
+    window.addEventListener("storage", syncUserIdFromToken);
+    window.addEventListener(AUTH_CHANGED_EVENT, syncUserIdFromToken);
+    return () => {
+      window.removeEventListener("storage", syncUserIdFromToken);
+      window.removeEventListener(AUTH_CHANGED_EVENT, syncUserIdFromToken);
+    };
+  }, []);
+
   const friendIdsForPresence = useMemo(
     () =>
       friends
@@ -275,16 +302,57 @@ export default function FriendsPage() {
       });
     };
 
+    const applyChattingSnapshot = (
+      users: Array<{ userId: number; withUserId: number | null; isChatting: boolean }>
+    ) => {
+      setFriends((previous) => {
+        let changed = false;
+        const byId = new Map(users.map((entry) => [String(entry.userId), entry]));
+        const next = previous.map((friend) => {
+          const chatting = byId.get(friend.id);
+          if (!chatting) return friend;
+          const isChattingForMe =
+            Boolean(chatting.isChatting) &&
+            presenceUserId !== null &&
+            chatting.withUserId === presenceUserId;
+          if ((friend.isChatting ?? false) === isChattingForMe) {
+            return friend;
+          }
+          changed = true;
+          return { ...friend, isChatting: isChattingForMe };
+        });
+        return changed ? next : previous;
+      });
+    };
+
     const handlePresenceMessage = (event: Event) => {
       const customEvent = event as CustomEvent<PresenceWsMessage>;
       const message = customEvent.detail;
       if (!message) return;
+      if (message.type === "registered") {
+        setPresenceUserId(message.userId);
+        return;
+      }
       if (message.type === "presenceSnapshot") {
         applyPresenceSnapshot(message.users);
         return;
       }
       if (message.type === "presenceUpdate") {
         applyPresenceSnapshot([message.user]);
+        return;
+      }
+      if (message.type === "chattingSnapshot") {
+        applyChattingSnapshot(message.users);
+        return;
+      }
+      if (message.type === "chattingUpdate") {
+        applyChattingSnapshot([
+          {
+            userId: message.userId,
+            withUserId: message.withUserId,
+            isChatting: message.isChatting,
+          },
+        ]);
       }
     };
 
@@ -292,7 +360,7 @@ export default function FriendsPage() {
     return () => {
       window.removeEventListener(PRESENCE_MESSAGE_EVENT, handlePresenceMessage as EventListener);
     };
-  }, []);
+  }, [presenceUserId]);
 
   useEffect(() => {
     const userIds = friendIdsKey
@@ -499,8 +567,8 @@ export default function FriendsPage() {
                   <p className="text-sm text-foreground/70 min-h-5">
                     {friendsLoading
                       ? t("loadingFriends")
-                      : `${filteredFriends.length} friends • ${
-                          filteredFriends.filter((f) => f.status === "online").length
+                      : `${filteredFriends.length} ${t("friendsCountUnit")} • ${
+                          filteredFriends.filter((f) => f.status === "online" || f.status === "chatting").length
                         } ${t("statusOnline")}`}
                   </p>
                 </div>
@@ -528,60 +596,75 @@ export default function FriendsPage() {
                       <div className="h-10 w-28 rounded-full bg-black/10" />
                     </div>
                   ))}
-                {filteredFriends.map((friend) => (
-                  <div
-                    key={friend.id}
-                    className="flex flex-col gap-4 rounded-2xl border border-black/5 bg-white/70 p-4 md:flex-row md:items-center md:justify-between"
-                  >
-                    <div className="flex items-center gap-4">
-                      <div className="relative h-12 w-12 rounded-full overflow-visible">
-                        <div className="h-12 w-12 rounded-full overflow-hidden bg-white/60 border border-black/10">
-                        <Image
-                          src={getAvatarSrc(friend)}
-                          alt={`${friend.name} avatar`}
-                          width={48}
-                          height={48}
-                          className="h-full w-full object-cover"
-                          onError={() => {
-                            setBrokenAvatarIds((prev) => ({ ...prev, [friend.id]: true }));
-                          }}
-                        />
+                {filteredFriends.map((friend) => {
+                  const isChatting = Boolean(friend.isChatting);
+                  const badgeClass = isChatting
+                    ? "text-[#6d28d9] bg-[#ede9fe]"
+                    : `${statusTextClass(friend.status)} ${statusTextBgClass(friend.status)}`;
+                  const badgeLabel = isChatting
+                    ? t("statusChatting")
+                    : friend.status === "online"
+                      ? t("statusOnline")
+                      : friend.status === "chatting"
+                        ? t("statusChatting")
+                      : friend.status === "in-game"
+                        ? t("statusInGame")
+                        : t("statusOffline");
+                  return (
+                    <div
+                      key={friend.id}
+                      className="flex flex-col gap-4 rounded-2xl border border-black/5 bg-white/70 p-4 md:flex-row md:items-center md:justify-between"
+                    >
+                      <div className="flex items-center gap-4">
+                        <div className="relative h-12 w-12 rounded-full overflow-visible">
+                          <div className="h-12 w-12 rounded-full overflow-hidden bg-white/60 border border-black/10">
+                            <Image
+                              src={getAvatarSrc(friend)}
+                              alt={`${friend.name} ${t("avatarAltSuffix")}`}
+                              width={48}
+                              height={48}
+                              className="h-full w-full object-cover"
+                              onError={() => {
+                                setBrokenAvatarIds((prev) => ({ ...prev, [friend.id]: true }));
+                              }}
+                            />
+                          </div>
+                          <span
+                            className={`absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 rounded-full border-2 border-white ${statusDotClass(friend.status)}`}
+                            aria-hidden="true"
+                          />
                         </div>
-                        <span
-                          className={`absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 rounded-full border-2 border-white ${statusDotClass(friend.status)}`}
-                          aria-hidden="true"
-                        />
+                        <div>
+                          <p className="text-xl md:text-2xl font-semibold leading-tight">{friend.name}</p>
+                          <p className="text-sm text-foreground/70">
+                            {friend.lastSeen ? `${t("lastSeen")} ${friend.lastSeen}` : ""}
+                          </p>
+                          <p
+                            className={`inline-flex mt-1 rounded-md px-2 py-0.5 text-sm font-medium ${badgeClass}`}
+                          >
+                            {badgeLabel}
+                          </p>
+                        </div>
                       </div>
-                      <div>
-                        <p className="text-xl md:text-2xl font-semibold leading-tight">{friend.name}</p>
-                        <p className="text-sm text-foreground/70">
-                          {friend.lastSeen ? `${t("lastSeen")} ${friend.lastSeen}` : ""}
-                        </p>
-                        <p
-                          className={`inline-flex mt-1 rounded-md px-2 py-0.5 text-sm font-medium ${statusTextClass(
-                            friend.status
-                          )} ${statusTextBgClass(friend.status)}`}
+                      <div className="flex flex-wrap items-center gap-3">
+                        <ButtonBasic1
+                          onClick={() => router.push(`/chat?userId=${friend.id}`)}
+                          className="w-28! h-10! text-sm"
                         >
-                          {friend.status === "online"
-                            ? t("statusOnline")
-                            : friend.status === "in-game"
-                            ? t("statusInGame")
-                            : t("statusOffline")}
-                        </p>
+                          {t("messageAction")}
+                        </ButtonBasic1>
+                        <ButtonBasic1
+                          variant="secondary"
+                          onClick={() => void handleRemoveFriend(friend.id)}
+                          disabled={friendActionLoading === friend.id}
+                          className="w-28! h-10! text-sm"
+                        >
+                          {friendActionLoading === friend.id ? "..." : t("remove")}
+                        </ButtonBasic1>
                       </div>
                     </div>
-                    <div className="flex flex-wrap items-center gap-3">
-                      <ButtonBasic1
-                        variant="secondary"
-                        onClick={() => void handleRemoveFriend(friend.id)}
-                        disabled={friendActionLoading === friend.id}
-                        className="w-28! h-10! text-sm"
-                      >
-                        {friendActionLoading === friend.id ? "..." : t("remove")}
-                      </ButtonBasic1>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
                 {!friendsLoading && filteredFriends.length === 0 && (
                   <div className="rounded-2xl border border-dashed border-black/20 p-10 text-center text-foreground/60">
                     {friendsError ? t("unableLoadFriends") : t("noFriendsMatch")}
@@ -604,7 +687,7 @@ export default function FriendsPage() {
                 <ButtonBasic1
                   onClick={handleSendRequest}
                   disabled={inviteStatus.type === "loading"}
-                  className="w-40! h-12!"
+                  className="w-full! md:w-56! h-12! shrink-0"
                 >
                   {inviteStatus.type === "loading" ? t("sending") : t("sendRequest")}
                 </ButtonBasic1>
