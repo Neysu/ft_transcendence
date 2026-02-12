@@ -25,6 +25,16 @@ export async function findUserByIdOrUsername(
   return (user);
 }
 
+export async function findUserByUsername(
+  username: string,
+  select: Prisma.UserSelect = { id: true, username: true, email: true },
+) {
+  return prisma.user.findUnique({
+    where: { username },
+    select,
+  });
+}
+
 export async function userExistsByEmailOrUsername(email?: string, username?: string) {
   if (!email && !username) {
     return (false);

@@ -21,6 +21,7 @@ const userBasicSchema = {
     id: { type: "number" },
     username: { type: "string" },
     email: { type: "string" },
+    profileText: { type: "string", nullable: true },
   },
 };
 
@@ -29,6 +30,10 @@ const userPublicSchema = {
   properties: {
     id: { type: "number" },
     username: { type: "string" },
+    profileText: { type: "string", nullable: true },
+    gamesPlayed: { type: "number" },
+    gamesWon: { type: "number" },
+    profileImage: { type: "string", nullable: true },
   },
 };
 
@@ -38,6 +43,9 @@ const userWithProfileSchema = {
     id: { type: "number" },
     username: { type: "string" },
     email: { type: "string" },
+    profileText: { type: "string", nullable: true },
+    gamesPlayed: { type: "number" },
+    gamesWon: { type: "number" },
     profileImage: { type: "string", nullable: true },
   },
 };
@@ -104,16 +112,16 @@ export const getUsersSchema = {
   },
 };
 
-export const getUserByIdSchema = {
+export const getUserByUsernameSchema = {
   tags: ["users"],
-  description: "Récupérer un utilisateur par id ou username",
-  summary: "Get user by id or username",
+  description: "Récupérer un utilisateur par username",
+  summary: "Get user by username",
   params: {
     type: "object",
     properties: {
-      id: { type: "string" },
+      username: { type: "string" },
     },
-    required: ["id"],
+    required: ["username"],
   },
   response: {
     200: userPublicSchema,
@@ -173,6 +181,7 @@ export const updateUserSchema = {
     properties: {
       username: { type: "string" },
       email: { type: "string", format: "email" },
+      profileText: { type: "string", maxLength: 80 },
     },
   },
   security: authRequired,

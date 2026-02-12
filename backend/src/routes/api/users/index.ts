@@ -2,7 +2,7 @@ import type { FastifyInstance } from "fastify";
 
 import { getUsers } from "./getUsers";
 import { getMe } from "./getMe";
-import { getUserById } from "./getUserById";
+import { getUserByUsername } from "./getUserByUsername";
 import { updateUser } from "./updateUser";
 import { createUser } from "./createUser";
 import { deleteUser } from "./deleteUser";
@@ -17,7 +17,7 @@ import { Messages } from "./messages";
 export async function Users(fastify: FastifyInstance) {
   fastify.register(getUsers);
   fastify.register(getMe);
-  fastify.register(getUserById);
+  fastify.register(getUserByUsername);
   fastify.register(updateUser);
   fastify.register(updatePassword);
   fastify.register(createUser);

@@ -15,6 +15,7 @@ model User {
   email        String   @unique
   password     String
   profileImage String?  // URL ou path vers avatar
+  profileText  String?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
   posts        Post[]

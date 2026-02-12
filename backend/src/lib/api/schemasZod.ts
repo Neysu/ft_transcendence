@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 const MoveEnum = z.enum(["ROCK", "PAPER", "SCISSORS"]);
+const MAX_PROFILE_TEXT_LENGTH = 80;
 
 // Schema for user registration
 export const RegisterSchema = z.object({
@@ -37,14 +38,23 @@ export const UpdateUserSchema = z
       .regex(/^(?!\d+$).+$/, "Le nom d'utilisateur ne peut pas être uniquement des chiffres")
       .optional(),
     email: z.string().email("Format d'email invalide").optional(),
+    profileText: z
+      .string()
+      .max(MAX_PROFILE_TEXT_LENGTH, `Le texte du profil ne peut pas dépasser ${MAX_PROFILE_TEXT_LENGTH} caractères`)
+      .refine((value) => (value.match(/\n/g) ?? []).length <= 1, "Le texte du profil ne peut contenir qu'un seul retour a la ligne")
+      .optional(),
   })
-  .refine((data) => Boolean(data.username) || Boolean(data.email), {
+  .refine((data) => Boolean(data.username) || Boolean(data.email) || data.profileText !== undefined, {
     message: "Au moins un champ doit etre fourni",
     path: ["username"],
   });
 
 export const UserIdParamSchema = z.object({
   id: z.string().min(1, "L'id est requis"),
+});
+
+export const UserUsernameParamSchema = z.object({
+  username: z.string().min(1, "Le username est requis"),
 });
 
 export const RpsPlaySchema = z

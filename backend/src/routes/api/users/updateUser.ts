@@ -8,6 +8,11 @@ import { authMiddleware } from "../../../middleware/auth";
 
 export async function updateUser(fastify: FastifyInstance) {
   fastify.register(async function (fastify) {
+    const normalizeProfileText = (value: string) => {
+      const normalized = value.replace(/\r\n/g, "\n");
+      const lines = normalized.split("\n");
+      return lines.slice(0, 2).join("\n");
+    };
 
     // PUT /api/user/:id → modifier un utilisateur
     fastify.put("/:id",
@@ -37,8 +42,17 @@ export async function updateUser(fastify: FastifyInstance) {
 
         const updatedUser = await prisma.user.update({
           where: { id: user.id },
-            data: { username: body.username, email: body.email },
-            select: { id: true, username: true, email: true },
+            data: {
+              username: body.username,
+              email: body.email,
+              profileText:
+                body.profileText === undefined
+                  ? undefined
+                  : body.profileText.trim().length === 0
+                    ? null
+                    : normalizeProfileText(body.profileText.trim()),
+            },
+            select: { id: true, username: true, email: true, profileText: true },
           });
 
           return updatedUser;
