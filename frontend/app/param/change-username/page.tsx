@@ -73,9 +73,8 @@ export default function ChangeUsernamePage() {
         }),
       }, { defaultMessage: "Failed to update username" });
 
-      // Success - redirect back to settings
       updateMe({ username: newUsername });
-      router.push("/param");
+      router.replace("/param");
     } catch (error) {
       console.error("Error updating username:", error);
       if (error instanceof TypeError && error.message.includes("fetch")) {

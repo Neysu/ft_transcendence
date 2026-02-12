@@ -73,9 +73,8 @@ export default function ChangeEmailPage() {
         }),
       }, { defaultMessage: "Failed to update email" });
 
-      // Success - redirect back to settings
       updateMe({ email: newEmail });
-      router.push("/param");
+      router.replace("/param");
     } catch (error) {
       console.error("Error updating email:", error);
       if (error instanceof TypeError && error.message.includes("fetch")) {

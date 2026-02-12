@@ -18,6 +18,7 @@ export default function LanguageToggle() {
     // Language toggle button - shows next language code
     <button
       onClick={toggleLanguage}
+      suppressHydrationWarning
       className="px-4 py-2 rounded-lg font-medium transition-colors border"
       style={{
         // Use CSS variables from current theme

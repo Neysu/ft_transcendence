@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useSyncExternalStore } from "react";
 
 /**
  * Language Provider & Translation System
@@ -48,6 +48,44 @@ const translations = {
     changeusername: "Change username",
     changeprofilepicture: "Change profile picture",
     changepassword: "Change password",
+    changeEmail: "Change email",
+    changePassword: "Change password",
+    changeProfilePicture: "Change profile picture",
+    confirmEmail: "Confirm email",
+    confirmNewEmail: "Confirm new email",
+    confirmNewPassword: "Confirm new password",
+    confirmNewUsername: "Confirm new username",
+    confirmUsername: "Confirm username",
+    currentEmail: "Current email",
+    currentPassword: "Current password",
+    currentUsername: "Current username",
+    emailsDoNotMatch: "Emails do not match",
+    enterCurrentPassword: "Enter current password",
+    enterNewEmail: "Enter new email",
+    enterNewPassword: "Enter new password",
+    enterNewUsername: "Enter new username",
+    fileTooLarge: "File is too large (max 5MB)",
+    imageRequirements: "PNG, JPG, WEBP or GIF, up to 5MB",
+    invalidEmail: "Invalid email address",
+    invalidFileType: "Invalid file type",
+    invalidUsername: "Invalid username",
+    key: "Key",
+    newEmail: "New email",
+    newPassword: "New password",
+    newUsername: "New username",
+    noFileSelected: "No file selected",
+    passwordNeedsNumber: "Password must include at least one number",
+    passwordNeedsUppercase: "Password must include at least one uppercase letter",
+    passwordRequirements: "At least 8 characters, one uppercase letter and one number",
+    passwordTooShort: "Password is too short",
+    passwordsDoNotMatch: "Passwords do not match",
+    sameEmail: "New email must be different",
+    samePassword: "New password must be different",
+    sameUsername: "New username must be different",
+    selectImage: "Select image",
+    userExists: "User already exists",
+    usernamesDoNotMatch: "Usernames do not match",
+    yourKey: "Your key",
     profilePicture: "Profile Picture",
     rock: "rock",
     paper: "paper",
@@ -75,10 +113,50 @@ const translations = {
     social: "Social",
     searchFriends: "Search friends",
     activeFriends: "Active friends",
+    friendsCountUnit: "friends",
     statusOnline: "online",
+    statusChatting: "chatting",
     statusInGame: "in game",
     statusOffline: "offline",
+    chatTitle: "Chat",
+    chatDirectMessages: "Direct Messages",
+    chatSearchFriend: "Search a friend",
+    chatUnreadSuffix: "unread",
+    chatNoFriendFound: "No friend found.",
+    chatConversation: "Conversation",
+    chatSelectFriend: "Select a friend",
+    chatTyping: "Typing...",
+    chatConnected: "Connected",
+    chatReconnecting: "Reconnecting",
+    chatWriteMessage: "Write a message...",
+    chatSend: "Send",
+    chatSelectFriendToWrite: "Select a friend to start writing messages.",
+    chatPickFriendPrompt: "Pick a friend in the left panel to start chatting.",
+    chatNoMessagesYet: "No messages yet. Say hi.",
+    chatSeen: "Seen",
+    chatFailedLoadProfile: "Unable to load your profile",
+    chatFailedLoadMessages: "Unable to load messages",
+    chatFailedLoadFriends: "Unable to load friends",
+    chatFailedInitialize: "Unable to initialize chat",
+    chatRealtimeError: "Realtime chat error",
+    chatRealtimeParseError: "Unable to parse realtime event",
+    chatRealtimeConnectionError: "Realtime connection error",
+    chatSelectFriendFirst: "Select a friend first",
+    chatConnectionNotReady: "Realtime connection is not ready",
+    chatInvalidFriendId: "Invalid friend id",
+    chatWsMissingToken: "Missing auth token",
+    chatWsInvalidToken: "Invalid auth token",
+    chatWsNotRegistered: "Not registered",
+    chatWsInvalidToUserId: "Invalid recipient",
+    chatWsInvalidWithUserId: "Invalid target user",
+    chatWsInvalidMessage: "Invalid message",
+    chatWsNotFriends: "Not friends",
+    chatWsFailedSaveMessage: "Failed to save message",
+    chatWsUnknownMessageType: "Unknown message type",
+    chatWsMessageTooLarge: "Message too large",
+    chatWsInvalidJson: "Invalid JSON",
     noEloYet: "No ELO yet",
+    avatarAltSuffix: "avatar",
     lastSeen: "Last seen",
     inviteToPlay: "Invite to play",
     remove: "Remove",
@@ -87,6 +165,7 @@ const translations = {
     usernameOrEmail: "Username or ID",
     sending: "Sending...",
     sendRequest: "Send request",
+    messageAction: "Message",
     requests: "Requests",
     pending: "pending",
     noPendingRequests: "No pending requests",
@@ -232,6 +311,44 @@ const translations = {
     changeusername: "Changer le nom d'utilisateur",
     changeprofilepicture: "Changer la photo de profil",
     changepassword: "Changer le mot de passe",
+    changeEmail: "Changer l'email",
+    changePassword: "Changer le mot de passe",
+    changeProfilePicture: "Changer la photo de profil",
+    confirmEmail: "Confirmez l'email",
+    confirmNewEmail: "Confirmez le nouvel email",
+    confirmNewPassword: "Confirmez le nouveau mot de passe",
+    confirmNewUsername: "Confirmez le nouveau nom d'utilisateur",
+    confirmUsername: "Confirmez le nom d'utilisateur",
+    currentEmail: "Email actuel",
+    currentPassword: "Mot de passe actuel",
+    currentUsername: "Nom d'utilisateur actuel",
+    emailsDoNotMatch: "Les emails ne correspondent pas",
+    enterCurrentPassword: "Entrez le mot de passe actuel",
+    enterNewEmail: "Entrez le nouvel email",
+    enterNewPassword: "Entrez le nouveau mot de passe",
+    enterNewUsername: "Entrez le nouveau nom d'utilisateur",
+    fileTooLarge: "Fichier trop volumineux (max 5 Mo)",
+    imageRequirements: "PNG, JPG, WEBP ou GIF, 5 Mo max",
+    invalidEmail: "Email invalide",
+    invalidFileType: "Type de fichier invalide",
+    invalidUsername: "Nom d'utilisateur invalide",
+    key: "Cle",
+    newEmail: "Nouvel email",
+    newPassword: "Nouveau mot de passe",
+    newUsername: "Nouveau nom d'utilisateur",
+    noFileSelected: "Aucun fichier selectionne",
+    passwordNeedsNumber: "Le mot de passe doit contenir au moins un chiffre",
+    passwordNeedsUppercase: "Le mot de passe doit contenir au moins une majuscule",
+    passwordRequirements: "Au moins 8 caracteres, une majuscule et un chiffre",
+    passwordTooShort: "Mot de passe trop court",
+    passwordsDoNotMatch: "Les mots de passe ne correspondent pas",
+    sameEmail: "Le nouvel email doit etre different",
+    samePassword: "Le nouveau mot de passe doit etre different",
+    sameUsername: "Le nouveau nom d'utilisateur doit etre different",
+    selectImage: "Selectionner une image",
+    userExists: "Utilisateur deja existant",
+    usernamesDoNotMatch: "Les noms d'utilisateur ne correspondent pas",
+    yourKey: "Votre cle",
     profilePicture: "Photo de profil",
     rock: "pierre",
     paper: "papier",
@@ -259,10 +376,50 @@ const translations = {
     social: "Social",
     searchFriends: "Rechercher des amis",
     activeFriends: "Amis actifs",
+    friendsCountUnit: "amis",
     statusOnline: "en ligne",
+    statusChatting: "en train de discuter",
     statusInGame: "en jeu",
     statusOffline: "hors ligne",
+    chatTitle: "Chat",
+    chatDirectMessages: "Messages directs",
+    chatSearchFriend: "Rechercher un ami",
+    chatUnreadSuffix: "non lus",
+    chatNoFriendFound: "Aucun ami trouvé.",
+    chatConversation: "Conversation",
+    chatSelectFriend: "sélectionnez un ami",
+    chatTyping: "En train d'écrire...",
+    chatConnected: "Connecté",
+    chatReconnecting: "Reconnexion...",
+    chatWriteMessage: "Écrire un message...",
+    chatSend: "Envoyer",
+    chatSelectFriendToWrite: "Selectionnez un ami pour commencer a ecrire.",
+    chatPickFriendPrompt: "Choisissez un ami dans la colonne de gauche pour discuter.",
+    chatNoMessagesYet: "Pas encore de messages. Dites bonjour.",
+    chatSeen: "Vu",
+    chatFailedLoadProfile: "Impossible de charger votre profil",
+    chatFailedLoadMessages: "Impossible de charger les messages",
+    chatFailedLoadFriends: "Impossible de charger les amis",
+    chatFailedInitialize: "Impossible d'initialiser le chat",
+    chatRealtimeError: "Erreur de chat en temps reel",
+    chatRealtimeParseError: "Impossible d'analyser l'evenement temps reel",
+    chatRealtimeConnectionError: "Erreur de connexion temps reel",
+    chatSelectFriendFirst: "Selectionnez d'abord un ami",
+    chatConnectionNotReady: "La connexion temps reel n'est pas prete",
+    chatInvalidFriendId: "Identifiant d'ami invalide",
+    chatWsMissingToken: "Jeton d'authentification manquant",
+    chatWsInvalidToken: "Jeton d'authentification invalide",
+    chatWsNotRegistered: "Utilisateur non enregistre",
+    chatWsInvalidToUserId: "Destinataire invalide",
+    chatWsInvalidWithUserId: "Utilisateur cible invalide",
+    chatWsInvalidMessage: "Message invalide",
+    chatWsNotFriends: "Vous n'etes pas amis",
+    chatWsFailedSaveMessage: "Impossible d'enregistrer le message",
+    chatWsUnknownMessageType: "Type de message inconnu",
+    chatWsMessageTooLarge: "Message trop volumineux",
+    chatWsInvalidJson: "JSON invalide",
     noEloYet: "Pas encore d'ELO",
+    avatarAltSuffix: "avatar",
     lastSeen: "Vu",
     inviteToPlay: "Inviter à jouer",
     remove: "Retirer",
@@ -271,6 +428,7 @@ const translations = {
     usernameOrEmail: "Nom d'utilisateur ou ID",
     sending: "Envoi...",
     sendRequest: "Envoyer une demande",
+    messageAction: "Message",
     requests: "Demandes",
     pending: "en attente",
     noPendingRequests: "Aucune demande en attente",
@@ -416,6 +574,44 @@ const translations = {
     changeusername: "Cambiar nombre de usuario",
     changeprofilepicture: "Cambiar foto de perfil",
     changepassword: "Cambiar contraseña",
+    changeEmail: "Cambiar correo",
+    changePassword: "Cambiar contrasena",
+    changeProfilePicture: "Cambiar foto de perfil",
+    confirmEmail: "Confirmar correo",
+    confirmNewEmail: "Confirmar nuevo correo",
+    confirmNewPassword: "Confirmar nueva contrasena",
+    confirmNewUsername: "Confirmar nuevo nombre de usuario",
+    confirmUsername: "Confirmar nombre de usuario",
+    currentEmail: "Correo actual",
+    currentPassword: "Contrasena actual",
+    currentUsername: "Nombre de usuario actual",
+    emailsDoNotMatch: "Los correos no coinciden",
+    enterCurrentPassword: "Ingresa la contrasena actual",
+    enterNewEmail: "Ingresa el nuevo correo",
+    enterNewPassword: "Ingresa la nueva contrasena",
+    enterNewUsername: "Ingresa el nuevo nombre de usuario",
+    fileTooLarge: "Archivo demasiado grande (max 5MB)",
+    imageRequirements: "PNG, JPG, WEBP o GIF, hasta 5MB",
+    invalidEmail: "Correo invalido",
+    invalidFileType: "Tipo de archivo invalido",
+    invalidUsername: "Nombre de usuario invalido",
+    key: "Clave",
+    newEmail: "Nuevo correo",
+    newPassword: "Nueva contrasena",
+    newUsername: "Nuevo nombre de usuario",
+    noFileSelected: "Ningun archivo seleccionado",
+    passwordNeedsNumber: "La contrasena debe incluir al menos un numero",
+    passwordNeedsUppercase: "La contrasena debe incluir al menos una mayuscula",
+    passwordRequirements: "Al menos 8 caracteres, una mayuscula y un numero",
+    passwordTooShort: "Contrasena demasiado corta",
+    passwordsDoNotMatch: "Las contrasenas no coinciden",
+    sameEmail: "El nuevo correo debe ser diferente",
+    samePassword: "La nueva contrasena debe ser diferente",
+    sameUsername: "El nuevo nombre de usuario debe ser diferente",
+    selectImage: "Seleccionar imagen",
+    userExists: "El usuario ya existe",
+    usernamesDoNotMatch: "Los nombres de usuario no coinciden",
+    yourKey: "Tu clave",
     profilePicture: "Foto de perfil",
     rock: "piedra",
     paper: "papel",
@@ -443,10 +639,50 @@ const translations = {
     social: "Social",
     searchFriends: "Buscar amigos",
     activeFriends: "Amigos activos",
+    friendsCountUnit: "amigos",
     statusOnline: "en linea",
+    statusChatting: "chateando",
     statusInGame: "en partida",
     statusOffline: "desconectado",
+    chatTitle: "Chat",
+    chatDirectMessages: "Mensajes directos",
+    chatSearchFriend: "Buscar un amigo",
+    chatUnreadSuffix: "sin leer",
+    chatNoFriendFound: "No se encontro ningun amigo.",
+    chatConversation: "Conversacion",
+    chatSelectFriend: "Selecciona un amigo",
+    chatTyping: "Escribiendo...",
+    chatConnected: "Conectado",
+    chatReconnecting: "Reconectando",
+    chatWriteMessage: "Escribe un mensaje...",
+    chatSend: "Enviar",
+    chatSelectFriendToWrite: "Selecciona un amigo para comenzar a escribir mensajes.",
+    chatPickFriendPrompt: "Selecciona un amigo en la columna izquierda para empezar a chatear.",
+    chatNoMessagesYet: "Todavia no hay mensajes. Saluda.",
+    chatSeen: "Visto",
+    chatFailedLoadProfile: "No se pudo cargar tu perfil",
+    chatFailedLoadMessages: "No se pudieron cargar los mensajes",
+    chatFailedLoadFriends: "No se pudieron cargar los amigos",
+    chatFailedInitialize: "No se pudo inicializar el chat",
+    chatRealtimeError: "Error de chat en tiempo real",
+    chatRealtimeParseError: "No se pudo analizar el evento en tiempo real",
+    chatRealtimeConnectionError: "Error de conexion en tiempo real",
+    chatSelectFriendFirst: "Selecciona primero un amigo",
+    chatConnectionNotReady: "La conexion en tiempo real no esta lista",
+    chatInvalidFriendId: "Identificador de amigo invalido",
+    chatWsMissingToken: "Falta el token de autenticacion",
+    chatWsInvalidToken: "Token de autenticacion invalido",
+    chatWsNotRegistered: "No registrado",
+    chatWsInvalidToUserId: "Destinatario invalido",
+    chatWsInvalidWithUserId: "Usuario objetivo invalido",
+    chatWsInvalidMessage: "Mensaje invalido",
+    chatWsNotFriends: "No son amigos",
+    chatWsFailedSaveMessage: "No se pudo guardar el mensaje",
+    chatWsUnknownMessageType: "Tipo de mensaje desconocido",
+    chatWsMessageTooLarge: "Mensaje demasiado grande",
+    chatWsInvalidJson: "JSON invalido",
     noEloYet: "Aun sin ELO",
+    avatarAltSuffix: "avatar",
     lastSeen: "Ultima vez visto",
     inviteToPlay: "Invitar a jugar",
     remove: "Eliminar",
@@ -455,6 +691,7 @@ const translations = {
     usernameOrEmail: "Nombre de usuario o ID",
     sending: "Enviando...",
     sendRequest: "Enviar solicitud",
+    messageAction: "Mensaje",
     requests: "Solicitudes",
     pending: "pendientes",
     noPendingRequests: "No hay solicitudes pendientes",
@@ -581,6 +818,50 @@ const translations = {
 
 // Create the language context with undefined as initial value
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
+const LANGUAGE_STORAGE_KEY = "language";
+const LANGUAGE_CHANGED_EVENT = "language-changed";
+
+function parseLanguage(value: string | null): Language | null {
+  if (value === "en" || value === "fr" || value === "es") {
+    return value;
+  }
+  return null;
+}
+
+function browserLanguage(): Language {
+  if (typeof window === "undefined") return "en";
+  const value = window.navigator.language.toLowerCase();
+  if (value.startsWith("fr")) return "fr";
+  if (value.startsWith("es")) return "es";
+  return "en";
+}
+
+function getLanguageSnapshot(): Language {
+  if (typeof window === "undefined") return "en";
+  try {
+    const saved = parseLanguage(window.localStorage.getItem(LANGUAGE_STORAGE_KEY));
+    if (saved) return saved;
+  } catch {}
+  return browserLanguage();
+}
+
+function subscribeLanguage(callback: () => void) {
+  if (typeof window === "undefined") {
+    return () => {};
+  }
+  const onStorage = (event: StorageEvent) => {
+    if (event.key === null || event.key === LANGUAGE_STORAGE_KEY) {
+      callback();
+    }
+  };
+  const onLanguageChanged = () => callback();
+  window.addEventListener("storage", onStorage);
+  window.addEventListener(LANGUAGE_CHANGED_EVENT, onLanguageChanged);
+  return () => {
+    window.removeEventListener("storage", onStorage);
+    window.removeEventListener(LANGUAGE_CHANGED_EVENT, onLanguageChanged);
+  };
+}
 
 /**
  * LanguageProvider Component
@@ -589,30 +870,24 @@ const LanguageContext = createContext<LanguageContextType | undefined>(undefined
  * Should be placed high in the component tree (typically in layout.tsx).
  */
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
-  // Track current language state, default to English
-  const [language, setLanguage] = useState<Language>("en");
-
-  // On component mount, restore saved language preference from localStorage
-  useEffect(() => {
-    // Check for saved language preference or default to English
-    const savedLanguage = localStorage.getItem("language") as Language | null;
-    const initialLanguage = savedLanguage || "en";
-    // Only update if different from current state to avoid unnecessary re-renders
-    if (initialLanguage !== language) {
-      setLanguage(initialLanguage);
-    }
-  }, []);
+  const language = useSyncExternalStore<Language>(
+    subscribeLanguage,
+    getLanguageSnapshot,
+    () => "en" as Language
+  );
 
   /**
    * Toggle between English, French, and Spanish
    * Updates state and persists preference to localStorage
    */
   const toggleLanguage = () => {
+    if (typeof window === "undefined") return;
     const languageCycle: Record<Language, Language> = { en: "fr", fr: "es", es: "en" };
     const newLanguage = languageCycle[language];
-    setLanguage(newLanguage);
-    // Persist user preference
-    localStorage.setItem("language", newLanguage);
+    try {
+      window.localStorage.setItem(LANGUAGE_STORAGE_KEY, newLanguage);
+    } catch {}
+    window.dispatchEvent(new Event(LANGUAGE_CHANGED_EVENT));
   };
 
   /**

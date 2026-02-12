@@ -105,7 +105,7 @@ export default function ChangeProfilePicturePage() {
         updateMe({ profileImage: data.profileImage });
       }
       await refreshMe();
-      router.push("/param");
+      router.replace("/param");
     } catch (error) {
       console.error("Error updating profile picture:", error);
       if (error instanceof TypeError && error.message.includes("fetch")) {
