@@ -162,24 +162,16 @@ Before running the project, ensure you have the following installed:
 
 ---
 
-### Environment Variables (.env)
-
-Create a `.env` file in the project root with the following variables:
-
-```env
-DATABASE_URL="file:./app/data/database.sqlite"
-JWT_SECRET="change-me"
-COOKIES_SECRET="change-me"
-BACK_HOST=0.0.0.0
-BACK_PORT=3000
-NODE_ENV=development
-
-Running the Project
+## Running the Project
 The entire project can be built and run using Docker Compose:
+
+```bash
 docker compose -f docker/docker-compose.yml up --build
+```
     • This command will automatically start the backend, frontend, and database services.
     • Once running, open your web browser and navigate to:
-http://localhost
+https://ft_trans.localhost
+
 The website should now be accessible, with full authentication, profile management, and the real-time Rock Paper Scissors game available.
 ---
 
@@ -238,3 +230,32 @@ The team followed an **Agile sprint methodology**, organizing work into weekly s
 - Each commit and push included **accurate comments** describing the changes made.  
 - This workflow ensured code quality, traceability, and smooth integration of features.
 
+## Used modules
+
+---
+
+## Major
+
+- Use a framework for both the frontend and backend.
+- Implement real-time features using WebSockets or similar technology.
+- Allow users to interact with other users
+- Standard user management and authentication.
+- Introduce an AI Opponent for games.
+- Implement a complete web-based game where users can play against each other.
+- Remote players
+
+---
+
+## Minor
+
+- Support for additional browsers.
+- Support for multiple languages
+- Custom-made design system with reusable components
+- Server-Side Rendering (SSR) for improved performance and SEO.
+- Use an ORM for the database.
+- Use a frontend framework
+- Use a backend framework
+
+---
+
+### 23 total points 
